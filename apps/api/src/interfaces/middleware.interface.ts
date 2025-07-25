@@ -1,10 +1,11 @@
 import { Request } from "express";
 
-export interface OwnerToken {
+export interface UserToken {
   id: string;
   email: string;
   role: string;
+  name: string;
 }
-export interface OwnerRequest extends Request {
-  user: OwnerToken;
+export interface UserRequest extends Request {
+  user: UserToken;
 }

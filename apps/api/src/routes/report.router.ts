@@ -1,19 +1,33 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
+import { requireRole } from "../middlewares/auth.middleware";
 import ReportController from "../controllers/report.controller";
-import { verifyOwner } from "../middlewares/auth.middleware";
 
 export const reportRouter = () => {
   const router = Router();
-  router.use(
-    verifyOwner as unknown as (
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ) => void
+  router.get(
+    "/monthly-summary",
+    requireRole(["OWNER"]),
+    ReportController.monthlySummary
   );
-  router.get("/sales", ReportController.sales);
-  router.get("/profit", ReportController.profit);
-  router.get("/losses", ReportController.losses);
-  router.get("/daily-transactions", ReportController.dailyTransactions);
+  router.get(
+    "/cash-position",
+    requireRole(["OWNER"]),
+    ReportController.cashPosition
+  );
+  router.get(
+    "/company-valuation",
+    requireRole(["OWNER"]),
+    ReportController.companyValuation
+  );
+  router.get(
+    "/yearly-graph-data",
+    requireRole(["OWNER"]),
+    ReportController.yearlyGraphData
+  );
+  router.get(
+    "/monthly-omset",
+    requireRole(["OWNER"]),
+    ReportController.monthlyOmset
+  );
   return router;
 };

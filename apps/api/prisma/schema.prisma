@@ -13,82 +13,173 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ===============================================
+// MODEL UNTUK USER DAN OTENTIKASI
+// ===============================================
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   email     String   @unique
-  password  String?
-  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+  password  String
+  role      Role     @default(TECHNICIAN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // soft delete
 
-  stockAdjustments StockAdjustment[]
-
-  @@map("users")
+  servicesAssigned      Service[]
+  transactionsRecorded  Transaction[]
+  itemAdjustmentsMade   ItemAdjustment[] @relation("RecordedByUser")
 }
 
-model Category {
-  id   String  @id @default(uuid())
-  name String  @unique
-  products Product[]
-
-  @@map("categories")
+enum Role {
+  OWNER
+  ACCOUNTANT
+  TECHNICIAN
 }
 
-model Product {
-  id          String  @id @default(uuid())
-  productCode String  @unique @map("product_code")
-  productName String  @map("product_name")
-  costPrice   Decimal @map("cost_price") @db.Decimal(10, 2)
-  price       Decimal @db.Decimal(10, 2)
-  stock       Int
-  minStock    Int?    @map("min_stock") @default(5) // stok minimum
-  isActive    Boolean @default(true) @map("is_active")
-createdAt DateTime? @default(now()) @map("created_at")
+// ===============================================
+// MODEL UNTUK CUSTOMER DAN SERVICE
+// ===============================================
 
-  categoryId String? @map("category_id")
-  category   Category? @relation(fields: [categoryId], references: [id])
+model Customer {
+  id      String   @id @default(cuid())
+  name    String
+  phone   String   @unique
+  address String?
+  notes   String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  saleDetails      SaleDetail[]
-  stockAdjustments StockAdjustment[]
-
-  @@map("products")
+  services     Service[]
+  transactions Transaction[]
 }
 
-model Sale {
-  id              String   @id @default(uuid())
-  transactionTime DateTime @default(now()) @map("transaction_time")
-  totalAmount     Decimal  @map("total_amount") @db.Decimal(10, 2)
 
-// Relasi
-  saleDetails SaleDetail[]
+model Service {
+  id        Int       @id @default(autoincrement()) // Ini nomor tiket utama
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  @@map("sales")
+  // Relasi ke Customer
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+
+  // Relasi ke Teknisi yang ditugaskan (bisa di-assign ke tiketnya)
+  technician   User?     @relation(fields: [technicianId], references: [id])
+  technicianId String?
+
+  // SATU Tiket Servis bisa punya BANYAK Device
+  devices   Device[]
+
+  // Transaksi pembayaran untuk seluruh tiket ini
+  paymentTransaction Transaction?
 }
 
-model SaleDetail {
-  id          String  @id @default(uuid())
-  saleId      String  @map("sale_id")
-  productId   String  @map("product_id")
-  quantity    Int
-  priceAtSale Decimal @map("price_at_sale") @db.Decimal(10, 2)
-  costAtSale  Decimal @map("cost_at_sale") @db.Decimal(10, 2)
 
-  sale    Sale    @relation(fields: [saleId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@map("sale_details")
+enum ServiceStatus {
+  CONFIRMATION
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  RETURNED_TO_CUSTOMER
+  CANCELLED
 }
 
-model StockAdjustment {
-  id             String   @id @default(uuid())
-  productId      String   @map("product_id")
-  userId         String   @map("user_id")
-  quantityChange Int      @map("quantity_change")
-  lastStock      Int      @map("last_stock")
-  reason         String
-  createdAt      DateTime @default(now()) @map("created_at")
+model Device {
+  id                   Int           @id @default(autoincrement())
+  deviceType           String        // Contoh: "Laptop", "HP"
+  problemDescription   String        // Keluhan
+  accessoriesLeft      String?       // "Yang ditinggalkan", contoh: "Charger ori, Tas"
+  status               ServiceStatus @default(PENDING) // Status per-device
+  completedAt          DateTime?
 
-  product Product @relation(fields: [productId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  // Relasi kembali ke Tiket Servis utama
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId Int
+}
 
-  @@map("stock_adjustments")
+// ===============================================
+// MODEL UNTUK MANAJEMEN STOK & ASET
+// ===============================================
+
+model Item {
+  id            String    @id @default(cuid())
+  name          String    @unique
+    description   String?
+  quantity      Int       @default(0)
+  purchasePrice Decimal
+  sellingPrice  Decimal?
+  type          ItemType
+  // 'deletedAt' digunakan HANYA jika Anda ingin menonaktifkan seluruh kategori item ini.
+  deletedAt     DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // REVISI: Nama relasi diubah agar lebih umum
+  adjustments ItemAdjustment[]
+  // Satu Item bisa terlibat dalam banyak Transaksi.
+  transactions  Transaction[] @relation("ItemTransactions")
+}
+
+enum ItemType {
+  STOCK
+  ASSET
+}
+
+// REVISI: Nama model diubah dari StockAdjustment menjadi ItemAdjustment
+// karena sekarang menangani ASET dan STOK.
+model ItemAdjustment {
+  id             String   @id @default(cuid())
+  quantityChange Int      // Contoh: -1 (untuk pengurangan), +2 (untuk penambahan)
+  reason         String   // Contoh: "Rusak total", "Hilang", "Koreksi hasil stock opname"
+  adjustedAt     DateTime @default(now())
+
+  // Relasi ke item yang disesuaikan
+  item    Item   @relation(fields: [itemId], references: [id])
+  itemId  String
+  
+  // Relasi ke user yang melakukan penyesuaian
+  recordedBy   User   @relation("RecordedByUser", fields: [recordedById], references: [id])
+  recordedById String
+}
+
+// ... model Transaction tetap sama ...
+model Transaction {
+  id              String          @id @default(cuid())
+  description     String
+  type            TransactionType
+  amount          Decimal
+  transactionDate DateTime        @default(now())
+
+  // --- Relasi yang sudah ada ---
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  service   Service? @relation(fields: [serviceId], references: [id])
+  serviceId Int?     @unique
+
+  recordedBy   User     @relation(fields: [recordedById], references: [id])
+  recordedById String
+  
+  createdAt DateTime @default(now())
+
+  // --- PENAMBAHAN KUNCI UNTUK INTEGRASI ERP ---
+  // Jika transaksi ini terkait dengan pembelian atau penjualan item,
+  // kita catat item apa dan berapa jumlahnya.
+  
+  // Relasi ke Item (opsional)
+  // Satu Transaksi hanya terkait dengan satu jenis Item.
+  item         Item?     @relation("ItemTransactions", fields: [itemId], references: [id])
+  itemId       String?
+
+  // Kuantitas item yang terlibat dalam transaksi ini
+  itemQuantity Int?
+}
+
+enum TransactionType {
+  INCOME  // Pemasukan
+  EXPENSE // Pengeluaran
 }

@@ -1,173 +1,218 @@
 import prisma from "../prisma";
+import { TransactionType, ItemType, Prisma } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
+
+// Helper function untuk kejelasan dan menghindari pengulangan kode
+const calculateBalance = (
+  income: { _sum: { amount: number | Decimal | null } },
+  expense: { _sum: { amount: number | Decimal | null } }
+) => {
+  const totalIncome = Number(income._sum.amount || 0);
+  const totalExpense = Number(expense._sum.amount || 0);
+  return totalIncome - totalExpense;
+};
 
 class ReportService {
-  async salesReport({
-    startDate,
-    endDate,
-  }: {
-    startDate: string;
-    endDate: string;
-  }) {
-    const startOfDay = new Date(startDate);
-    startOfDay.setHours(0, 0, 0, 0); // Pastikan mulai dari awal hari
+  /**
+   * Menghitung ringkasan keuangan untuk bulan tertentu.
+   * Efisiensi: Cukup baik. Mengambil semua transaksi bulanan masih wajar.
+   * Perbaikan: Logika HPP diperbaiki.
+   */
+  async monthlySummary(month: number, year: number) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const endOfDay = new Date(endDate);
-    endOfDay.setHours(23, 59, 59, 999); // Pastikan berakhir di akhir hari
-
-    const result = await prisma.sale.aggregate({
-      _sum: { totalAmount: true },
-      _count: { id: true },
-      where: {
-        transactionTime: {
-          gte: startOfDay,
-          lte: endOfDay,
+    const [incomeResult, expenseResult, hppTransactions] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: {
+          transactionDate: { gte: start, lte: end },
+          type: TransactionType.INCOME,
         },
-      },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: {
+          transactionDate: { gte: start, lte: end },
+          type: TransactionType.EXPENSE,
+        },
+        _sum: { amount: true },
+      }),
+      // Mengambil transaksi penjualan barang untuk menghitung HPP
+      prisma.transaction.findMany({
+        where: {
+          transactionDate: { gte: start, lte: end },
+          type: TransactionType.INCOME, // HPP hanya dari penjualan (pemasukan)
+          itemId: { not: null },
+        },
+        include: {
+          item: { select: { purchasePrice: true } }, // Hanya ambil harga beli
+        },
+      }),
+    ]);
+
+    const omset = Number(incomeResult._sum.amount || 0);
+    const totalPengeluaran = Number(expenseResult._sum.amount || 0);
+
+    // Perhitungan HPP yang BENAR
+    const hpp = hppTransactions.reduce((sum, t) => {
+      const costOfGoods =
+        Number(t.item?.purchasePrice || 0) * Number(t.itemQuantity || 0);
+      return sum + costOfGoods;
+    }, 0);
+
+    // Catatan: Laba bersih di sini belum termasuk HPP dari spare part servis.
+    // Jika itu dibutuhkan, logikanya harus ditambah.
+    const labaBersih = omset - totalPengeluaran - hpp;
+
+    return { omset, totalPengeluaran, hpp, labaBersih };
+  }
+
+  /**
+   * Menghitung posisi kas (saldo awal dan akhir) untuk bulan tertentu.
+   * Efisiensi: Sangat Tinggi. Semua kalkulasi dilakukan di database.
+   */
+  async cashPosition(month: number, year: number) {
+    const awalBulan = new Date(year, month - 1, 1);
+    const akhirBulan = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const [incomeBefore, expenseBefore, incomeInMonth, expenseInMonth] =
+      await Promise.all([
+        // Saldo Awal
+        prisma.transaction.aggregate({
+          where: {
+            transactionDate: { lt: awalBulan },
+            type: TransactionType.INCOME,
+          },
+          _sum: { amount: true },
+        }),
+        prisma.transaction.aggregate({
+          where: {
+            transactionDate: { lt: awalBulan },
+            type: TransactionType.EXPENSE,
+          },
+          _sum: { amount: true },
+        }),
+        // Perubahan Selama Bulan Ini
+        prisma.transaction.aggregate({
+          where: {
+            transactionDate: { gte: awalBulan, lte: akhirBulan },
+            type: TransactionType.INCOME,
+          },
+          _sum: { amount: true },
+        }),
+        prisma.transaction.aggregate({
+          where: {
+            transactionDate: { gte: awalBulan, lte: akhirBulan },
+            type: TransactionType.EXPENSE,
+          },
+          _sum: { amount: true },
+        }),
+      ]);
+
+    const saldoAwal = calculateBalance(incomeBefore, expenseBefore);
+    const changeInMonth = calculateBalance(incomeInMonth, expenseInMonth);
+    const saldoAkhir = saldoAwal + changeInMonth;
+
+    return { saldoAwal, saldoAkhir };
+  }
+
+  /**
+   * Menghitung valuasi perusahaan pada akhir tahun tertentu.
+   * Efisiensi: Tinggi. Kalkulasi kas dilakukan di database.
+   */
+  async companyValuation(year: number) {
+    const end = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    const [income, expense, asetItems, stokItems] = await Promise.all([
+      // Hitung total kas di database
+      prisma.transaction.aggregate({
+        where: { transactionDate: { lte: end }, type: TransactionType.INCOME },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: { transactionDate: { lte: end }, type: TransactionType.EXPENSE },
+        _sum: { amount: true },
+      }),
+      // Mengambil item masih OK karena jumlahnya lebih sedikit
+      prisma.item.findMany({
+        where: { type: ItemType.ASSET, deletedAt: null },
+      }),
+      prisma.item.findMany({
+        where: { type: ItemType.STOCK, deletedAt: null },
+      }),
+    ]);
+
+    const totalKas = calculateBalance(income, expense);
+
+    const totalNilaiAset = asetItems.reduce(
+      (sum, i) => sum + Number(i.quantity) * Number(i.purchasePrice),
+      0
+    );
+    const totalNilaiStok = stokItems.reduce(
+      (sum, i) => sum + Number(i.quantity) * Number(i.purchasePrice),
+      0
+    );
+
+    const totalValuasi = totalKas + totalNilaiAset + totalNilaiStok;
+    return { totalKas, totalNilaiAset, totalNilaiStok, totalValuasi };
+  }
+
+  /**
+   * Menyediakan data valuasi per tahun untuk grafik.
+   * Efisiensi: Sedang ke Tinggi. Loop di server, tapi kalkulasi per tahun efisien.
+   */
+  async yearlyGraphData() {
+    // Pendekatan ini lebih efisien daripada mengambil semua transaksi
+    const firstTransaction = await prisma.transaction.findFirst({
+      orderBy: { transactionDate: "asc" },
     });
-    return {
-      totalOmzet: result._sum.totalAmount || 0,
-      jumlahTransaksi: result._count.id || 0,
-    };
+    const lastTransaction = await prisma.transaction.findFirst({
+      orderBy: { transactionDate: "desc" },
+    });
+
+    if (!firstTransaction || !lastTransaction) return [];
+
+    const startYear = firstTransaction.transactionDate.getFullYear();
+    const endYear = lastTransaction.transactionDate.getFullYear();
+
+    const resultPromises = [];
+    for (let year = startYear; year <= endYear; year++) {
+      // Panggil fungsi companyValuation yang sudah efisien
+      resultPromises.push(
+        this.companyValuation(year).then((valuation) => ({
+          year,
+          totalValuasi: valuation.totalValuasi,
+        }))
+      );
+    }
+
+    return Promise.all(resultPromises);
   }
 
-  async profitReport({
-    startDate,
-    endDate,
-  }: {
-    startDate: string;
-    endDate: string;
-  }) {
-    // Pastikan tanggal diformat dengan benar untuk keamanan dan fungsionalitas
-    const startOfDay = new Date(startDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(endDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Menggunakan $queryRaw untuk menulis SQL murni
-    // `Prisma.sql` digunakan untuk mencegah SQL Injection
-    const result: [{ total_profit: number | bigint | null }] =
-      await prisma.$queryRaw`
-      SELECT 
-        SUM(("price_at_sale" - "cost_at_sale") * quantity) as total_profit
-      FROM 
-        "sale_details"
-      WHERE 
-        "sale_id" IN (
-          SELECT id FROM "sales" WHERE "transaction_time" BETWEEN ${startOfDay} AND ${endOfDay}
-        );
-    `;
-
-    // $queryRaw mengembalikan array, kita ambil elemen pertama
-    let totalProfit = result[0]?.total_profit || 0;
-    if (typeof totalProfit === "bigint") totalProfit = Number(totalProfit);
-    // Pastikan hasilnya adalah angka yang valid
-    return { totalProfit };
-  }
-
-  async lossesReport({
-    startDate,
-    endDate,
-  }: {
-    startDate: string;
-    endDate: string;
-  }) {
-    const startOfDay = new Date(startDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(endDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const result: [{ total_loss_value: number | bigint | null }] =
-      await prisma.$queryRaw`
-    SELECT
-      SUM(ABS(sa."quantity_change") * p."cost_price") as total_loss_value
-    FROM
-      "stock_adjustments" as sa
-    JOIN
-      "products" as p ON sa."product_id" = p.id
-    WHERE
-      sa."created_at" BETWEEN ${startOfDay} AND ${endOfDay}
-      AND sa."quantity_change" < 0
-      AND sa."reason" NOT IN ('Recount Stok', 'Retur Supplier');
-  `;
-
-    let totalLossValue = result[0]?.total_loss_value || 0;
-    if (typeof totalLossValue === "bigint")
-      totalLossValue = Number(totalLossValue);
-    return { totalLossValue };
-  }
-
-  async dailyTransactionsReport({
-    startDate,
-    endDate,
-  }: {
-    startDate: string;
-    endDate: string;
-  }) {
-    // Ambil transaksi per hari, omzet, profit, loss, dan jumlah transaksi
-    const result: Array<{
-      date: string;
-      revenue: number | bigint;
-      profit: number | bigint;
-      loss: number | bigint;
-      transactionCount: number | bigint;
-    }> = await prisma.$queryRaw`
-      WITH sales_per_day AS (
-        SELECT
-          DATE("transaction_time") AS date,
-          SUM("total_amount") AS revenue,
-          COUNT(id) AS transaction_count
-        FROM "sales"
-        WHERE "transaction_time" BETWEEN ${startDate}::date AND ${endDate}::date + INTERVAL '1 day' - INTERVAL '1 second'
-        GROUP BY DATE("transaction_time")
-      ),
-      profit_per_day AS (
-        SELECT
-          DATE(s."transaction_time") AS date,
-          SUM((sd."price_at_sale" - sd."cost_at_sale") * sd.quantity) AS profit
-        FROM "sale_details" sd
-        JOIN "sales" s ON sd."sale_id" = s.id
-        WHERE s."transaction_time" BETWEEN ${startDate}::date AND ${endDate}::date + INTERVAL '1 day' - INTERVAL '1 second'
-        GROUP BY DATE(s."transaction_time")
-      ),
-      loss_per_day AS (
-        SELECT
-          DATE(sa."created_at") AS date,
-          SUM(ABS(sa."quantity_change") * p."cost_price") AS loss
-        FROM "stock_adjustments" sa
-        JOIN "products" p ON sa."product_id" = p.id
-        WHERE sa."created_at" BETWEEN ${startDate}::date AND ${endDate}::date + INTERVAL '1 day' - INTERVAL '1 second'
-          AND sa."quantity_change" < 0
-          AND sa."reason" NOT IN ('Recount Stok', 'Retur Supplier')
-        GROUP BY DATE(sa."created_at")
-      )
-      SELECT
-        d.date,
-        COALESCE(s.revenue, 0) AS revenue,
-        COALESCE(p.profit, 0) AS profit,
-        COALESCE(l.loss, 0) AS loss,
-        COALESCE(s.transaction_count, 0) AS "transactionCount"
-      FROM (
-        SELECT generate_series(${startDate}::date, ${endDate}::date, INTERVAL '1 day') AS date
-      ) d
-      LEFT JOIN sales_per_day s ON d.date = s.date
-      LEFT JOIN profit_per_day p ON d.date = p.date
-      LEFT JOIN loss_per_day l ON d.date = l.date
-      ORDER BY d.date ASC;
-    `;
-    // Konversi BigInt ke Number
-    return result.map((row) => ({
-      ...row,
-      revenue:
-        typeof row.revenue === "bigint" ? Number(row.revenue) : row.revenue,
-      profit: typeof row.profit === "bigint" ? Number(row.profit) : row.profit,
-      loss: typeof row.loss === "bigint" ? Number(row.loss) : row.loss,
-      transactionCount:
-        typeof row.transactionCount === "bigint"
-          ? Number(row.transactionCount)
-          : row.transactionCount,
-    }));
+  /**
+   * Menyediakan data omset per bulan untuk grafik.
+   * Efisiensi: Sangat Tinggi. Menggunakan agregasi di database.
+   */
+  async getMonthlyOmsetPerYear(year: number) {
+    // Loop 12x aggregate, efisien dan mudah dibaca
+    const omsetPromises = [];
+    for (let month = 1; month <= 12; month++) {
+      omsetPromises.push(
+        prisma.transaction
+          .aggregate({
+            where: {
+              transactionDate: {
+                gte: new Date(year, month - 1, 1),
+                lt: new Date(year, month, 1),
+              },
+              type: "INCOME",
+            },
+            _sum: { amount: true },
+          })
+          .then((omset) => ({ month, omset: Number(omset._sum.amount || 0) }))
+      );
+    }
+    return Promise.all(omsetPromises);
   }
 }
 

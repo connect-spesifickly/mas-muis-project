@@ -3,75 +3,79 @@ import { ApiResponse } from "../helpers/api-response";
 import reportService from "../services/report.service";
 
 class ReportController {
-  async sales(req: Request, res: Response, next: NextFunction) {
+  async monthlySummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate } = req.query;
-      const result = await reportService.salesReport({
-        startDate: String(startDate),
-        endDate: String(endDate),
-      });
+      const { month, year } = req.query;
+      const result = await reportService.monthlySummary(
+        Number(month),
+        Number(year)
+      );
       ApiResponse({
         res,
         statusCode: 200,
-        message: "Sales report",
+        message: "Monthly summary",
         data: result,
       });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      next(err);
     }
   }
-
-  async profit(req: Request, res: Response, next: NextFunction) {
+  async cashPosition(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate } = req.query;
-      const result = await reportService.profitReport({
-        startDate: String(startDate),
-        endDate: String(endDate),
-      });
+      const { month, year } = req.query;
+      const result = await reportService.cashPosition(
+        Number(month),
+        Number(year)
+      );
       ApiResponse({
         res,
         statusCode: 200,
-        message: "Profit report",
+        message: "Cash position",
         data: result,
       });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      next(err);
     }
   }
-
-  async losses(req: Request, res: Response, next: NextFunction) {
+  async companyValuation(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate } = req.query;
-      const result = await reportService.lossesReport({
-        startDate: String(startDate),
-        endDate: String(endDate),
-      });
+      const { year } = req.query;
+      const result = await reportService.companyValuation(Number(year));
       ApiResponse({
         res,
         statusCode: 200,
-        message: "Losses report",
+        message: "Company valuation",
         data: result,
       });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      next(err);
     }
   }
-
-  async dailyTransactions(req: Request, res: Response, next: NextFunction) {
+  async yearlyGraphData(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate } = req.query;
-      const result = await reportService.dailyTransactionsReport({
-        startDate: String(startDate),
-        endDate: String(endDate),
-      });
+      const result = await reportService.yearlyGraphData();
       ApiResponse({
         res,
         statusCode: 200,
-        message: "Daily transactions report",
+        message: "Yearly graph data",
         data: result,
       });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      next(err);
+    }
+  }
+  async monthlyOmset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { year } = req.query;
+      const result = await reportService.getMonthlyOmsetPerYear(Number(year));
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "Monthly omset per year",
+        data: result,
+      });
+    } catch (err) {
+      next(err);
     }
   }
 }

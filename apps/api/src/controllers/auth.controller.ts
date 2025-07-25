@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponse } from "../helpers/api-response";
 import authService from "../services/auth.service";
-import { putOwnerAccessToken } from "../helpers/jwt";
+import { putUserAccessToken } from "../helpers/jwt";
 import { hbs } from "../helpers/handlebars";
 import { transporter } from "../helpers/nodemailer";
 
@@ -12,7 +12,7 @@ class AuthController {
       ApiResponse({
         res,
         statusCode: 200,
-        message: "Owner logged in successfully",
+        message: "User logged in successfully",
         data: result,
       });
     } catch (error) {
@@ -52,14 +52,13 @@ class AuthController {
   async forgotPasswordRequest(req: Request, res: Response, next: NextFunction) {
     try {
       const compilePasswordResetRequest = await hbs("reset-password-template");
-      const { accessToken } = await putOwnerAccessToken(
+      const { accessToken } = await putUserAccessToken(
         undefined,
         req.body.email
       );
       const html = compilePasswordResetRequest({
         email: req.body.email,
         token: accessToken,
-        role: "Owner",
       });
       transporter.sendMail({
         to: req.body.email,
