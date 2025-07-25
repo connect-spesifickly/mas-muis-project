@@ -3,24 +3,56 @@ import { ResponseError } from "../helpers/error";
 import { ServiceStatus } from "@prisma/client";
 
 class ServiceService {
-  async list() {
-    // Ambil semua service yang masih ada device belum selesai
-    return prisma.service.findMany({
-      where: {
-        devices: {
-          some: {
-            status: {
-              notIn: ["COMPLETED", "RETURNED_TO_CUSTOMER", "CANCELLED"],
-            },
+  async list(page: number = 1, pageSize: number = 10) {
+    // Ambil semua service yang masih ada device belum selesai dengan pagination
+    const where = {
+      devices: {
+        some: {
+          status: {
+            notIn: [
+              ServiceStatus.COMPLETED,
+              ServiceStatus.RETURNED_TO_CUSTOMER,
+              ServiceStatus.CANCELLED,
+            ],
           },
         },
       },
-      include: {
-        customer: true,
-        devices: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    };
+
+    const [services, total] = await Promise.all([
+      prisma.service.findMany({
+        where,
+        select: {
+          id: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          devices: {
+            select: {
+              id: true,
+              deviceType: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.service.count({ where }),
+    ]);
+
+    return {
+      data: services,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
   async create(data: {
     customerId: string;
@@ -32,6 +64,12 @@ class ServiceService {
   }) {
     // Transaksi DB: buat service dan devices sekaligus
     return prisma.$transaction(async (tx) => {
+      const customer = await tx.customer.findUnique({
+        where: { id: data.customerId },
+      });
+      if (!customer) {
+        throw new ResponseError(404, "Customer not found");
+      }
       const service = await tx.service.create({
         data: {
           customerId: data.customerId,
@@ -52,14 +90,20 @@ class ServiceService {
     });
   }
   async updateDeviceStatus(id: number, status: ServiceStatus) {
-    // Update status device
-    const device = await prisma.device.findUnique({ where: { id } });
-    if (!device) throw new ResponseError(404, "Device not found");
-    const updated = await prisma.device.update({
-      where: { id },
-      data: { status },
-    });
-    return updated;
+    try {
+      const updatedDevice = await prisma.device.update({
+        where: { id },
+        data: { status },
+      });
+      return updatedDevice;
+    } catch (error: any) {
+      // P2025 adalah kode error Prisma untuk "Record to update not found."
+      if (error.code === "P2025") {
+        throw new ResponseError(404, "Device not found");
+      }
+      // Lempar error lain jika bukan karena tidak ditemukan
+      throw error;
+    }
   }
 }
 

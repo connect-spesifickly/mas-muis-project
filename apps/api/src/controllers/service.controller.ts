@@ -5,7 +5,9 @@ import serviceService from "../services/service.service";
 class ServiceController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await serviceService.list();
+      const page = Number(req.query.page) || 1;
+      const pageSize = Number(req.query.pageSize) || 10;
+      const result = await serviceService.list(page, pageSize);
       ApiResponse({
         res,
         statusCode: 200,
