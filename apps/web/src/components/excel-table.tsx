@@ -341,11 +341,14 @@ export default function ExcelTable<
         <div className="rounded-md border">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gradient-to-r from-blue-50 to-indigo-50">
+              <TableRow className="bg-white/80 text-gray-500 font-normal rounded-t-lg border-b-0 transition-all">
                 {columns.map((column) => (
-                  <TableHead key={column.key} className="relative group">
+                  <TableHead
+                    key={column.key}
+                    className="relative group text-gray-500 font-normal bg-white/80 first:rounded-tl-lg last:rounded-tr-lg border-b-0 py-3"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">
+                      <span>
                         {column.label}
                         {column.required && (
                           <span className="text-red-500 ml-1">*</span>
@@ -356,7 +359,7 @@ export default function ExcelTable<
                           variant="ghost"
                           size="sm"
                           onClick={() => handleSort(column.key)}
-                          className="h-6 w-6 p-0"
+                          className="h-6 w-6 p-0 bg-transparent border-0 shadow-none text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                         >
                           {sortConfig?.key === column.key ? (
                             sortConfig.direction === "asc" ? (
@@ -373,7 +376,7 @@ export default function ExcelTable<
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0"
+                              className="h-6 w-6 p-0 bg-transparent border-0 shadow-none text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                             >
                               <Filter className="h-3 w-3" />
                             </Button>
@@ -394,13 +397,15 @@ export default function ExcelTable<
                     </div>
                   </TableHead>
                 ))}
-                <TableHead className="w-[120px]">Actions</TableHead>
+                <TableHead className="w-[120px] bg-white/80 text-gray-500 font-normal border-b-0 last:rounded-tr-lg py-3">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {/* Input Row */}
               {onAdd && (
-                <TableRow className="bg-green-50 hover:bg-green-100">
+                <TableRow className="bg-green-50 hover:bg-green-100 transition-all">
                   {columns.map((column) => (
                     <TableCell key={column.key}>
                       {renderCell(column, newRow[column.key], true, (value) =>
@@ -429,7 +434,7 @@ export default function ExcelTable<
                     key={rowId}
                     className={`${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-blue-50 transition-colors`}
+                    } hover:bg-blue-50 transition-colors duration-200`}
                   >
                     {columns.map((column) => (
                       <TableCell key={column.key}>

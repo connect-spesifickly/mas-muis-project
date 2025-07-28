@@ -18,21 +18,40 @@ interface UseCustomerParams {
   limit: number;
 }
 
+// Type guard untuk validasi response customer
+function isCustomerListApiResponse(
+  obj: unknown
+): obj is { data: Customer[]; totalPages: number; currentPage: number } {
+  if (typeof obj !== "object" || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    Array.isArray(o.data) &&
+    typeof o.totalPages === "number" &&
+    typeof o.currentPage === "number"
+  );
+}
+
 const fetchCustomersApi = async (
   params: UseCustomerParams,
   token?: string
 ): Promise<{
   data: Customer[];
-  total: number;
   totalPages: number;
   currentPage: number;
 }> => {
   const response = await customerApi.list(params, token);
+  const d = response.data;
+  if (!isCustomerListApiResponse(d)) {
+    return {
+      data: [],
+      totalPages: 1,
+      currentPage: 1,
+    };
+  }
   return {
-    data: Array.isArray(response.data) ? response.data : [],
-    total: response.total || 0,
-    totalPages: response.totalPages || 0,
-    currentPage: response.currentPage || 1,
+    data: d.data,
+    totalPages: d.totalPages,
+    currentPage: d.currentPage,
   };
 };
 
@@ -56,7 +75,6 @@ export function useCustomers(params: UseCustomerParams) {
 
   const pagination = React.useMemo(() => {
     return {
-      total: data?.total || 0,
       totalPages: data?.totalPages || 0,
       currentPage: data?.currentPage || 1,
     };

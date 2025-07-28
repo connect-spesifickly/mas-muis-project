@@ -15,7 +15,6 @@ export interface Transaction {
   description: string;
   amount: number;
   type: TransactionType;
-  category?: string;
   serviceId?: number;
   itemId?: string;
   itemQuantity?: number;
@@ -46,7 +45,6 @@ export interface CreateTransactionData {
   description: string;
   amount: number;
   type: TransactionType;
-  category?: string;
   serviceId?: number;
   itemId?: string;
   itemQuantity?: number;
@@ -58,7 +56,6 @@ export interface UpdateTransactionData {
   description?: string;
   amount?: number;
   type?: TransactionType;
-  category?: string;
   serviceId?: number;
   itemId?: string;
   itemQuantity?: number;

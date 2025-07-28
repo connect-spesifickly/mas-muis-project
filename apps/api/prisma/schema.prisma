@@ -153,6 +153,7 @@ model Transaction {
   type            TransactionType
   amount          Decimal
   transactionDate DateTime        @default(now())
+  category        String?         // Tambahkan field category
 
   // --- Relasi yang sudah ada ---
   customer   Customer? @relation(fields: [customerId], references: [id])

@@ -11,7 +11,6 @@ export interface Customer {
 
 export interface CustomerListResponse {
   data: Customer[];
-  total: number;
   totalPages: number;
   currentPage: number;
 }
