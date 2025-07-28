@@ -27,6 +27,8 @@ export function SidebarPage({ activePage }: SidebarProps) {
   const sidebarItems: { id: PageType; label: string; icon: string }[] = [
     { id: "sale", label: "Sale", icon: "shopping-cart" },
     { id: "product", label: "Product", icon: "box" },
+    { id: "customer", label: "Customer", icon: "users" },
+    { id: "transaction", label: "Transaction", icon: "credit-card" },
     { id: "report", label: "Report", icon: "bar-chart" },
     { id: "adjustment", label: "Adjustment", icon: "adjustment" },
   ];
@@ -106,6 +108,40 @@ export function SidebarPage({ activePage }: SidebarProps) {
             />
           </svg>
         );
+      case "users":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+            />
+          </svg>
+        );
+      case "credit-card":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+            />
+          </svg>
+        );
       default:
         return null;
     }
@@ -138,6 +174,10 @@ export function SidebarPage({ activePage }: SidebarProps) {
                         mutate(["report", today, today]);
                       } else if (item.id === "adjustment") {
                         mutate(["stock-adjustments"]);
+                      } else if (item.id === "customer") {
+                        mutate(["customers"]);
+                      } else if (item.id === "transaction") {
+                        mutate(["transactions"]);
                       }
                     }}
                     className={`flex w-full items-center rounded-md px-4 py-3 ${

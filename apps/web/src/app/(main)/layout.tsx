@@ -25,6 +25,8 @@ export default function MainLayout({
   const getActivePage = (): PageType => {
     if (pathname.startsWith("/sale")) return "sale";
     if (pathname.startsWith("/product")) return "product";
+    if (pathname.startsWith("/customer")) return "customer";
+    if (pathname.startsWith("/transaction")) return "transaction";
     if (pathname.startsWith("/report")) return "report";
     if (pathname.startsWith("/adjustment")) return "adjustment";
     return "sale";
@@ -101,6 +103,72 @@ export default function MainLayout({
     },
     {
       id: 4,
+      label: "Customer",
+      icon: (
+        <svg
+          className="w-full h-full"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+          />
+        </svg>
+      ),
+      href: "/customer",
+    },
+    {
+      id: 5,
+      label: "Transaction",
+      icon: (
+        <svg
+          className="w-full h-full"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+          />
+        </svg>
+      ),
+      href: "/transaction",
+    },
+    {
+      id: 6,
+      label: "Report",
+      icon: (
+        <svg
+          className="w-full h-full"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M3 3v18h18"
+          />
+          <rect x="7" y="13" width="3" height="5" rx="1" />
+          <rect x="12" y="9" width="3" height="9" rx="1" />
+          <rect x="17" y="6" width="3" height="12" rx="1" />
+        </svg>
+      ),
+      href: "/report",
+    },
+    {
+      id: 7,
       label: "Adjustment",
       icon: (
         <svg

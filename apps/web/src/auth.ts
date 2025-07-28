@@ -11,7 +11,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         try {
           const response = await api.post<{
             data: {
-              user: { id: string; email: string };
+              user: { id: string; email: string; role: string };
               token: {
                 accessToken: string;
                 refreshToken: string;
@@ -28,6 +28,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               },
               id: response.data.data.user.id,
               email: response.data.data.user.email,
+              role: response.data.data.user.role,
             },
           };
           return user;
@@ -47,6 +48,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.refreshToken = user.data.tokens.refreshToken;
         token.email = user.data.email;
         token.id = user.data.id;
+        token.role = user.data.role;
       } else if (token.accessToken || trigger === "update") {
         const newToken = await api.post<{
           data: {
@@ -66,6 +68,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.accessToken = token.accessToken as string;
         session.email = token.email as string;
         session.id = token.id as string;
+        session.role = token.role as string;
       }
       return session;
     },

@@ -35,7 +35,7 @@ const Navbar = React.forwardRef<
           <div className="relative">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center justify-center w-[32px] h-[32px] rounded-full bg-blue-200 text-blue-900 focus:outline-none"
+              className="flex items-center justify-center w-[38px] h-[38px] rounded-full bg-blue-200 text-blue-900 focus:outline-none"
             >
               {session?.email?.charAt(0).toUpperCase()}
             </button>

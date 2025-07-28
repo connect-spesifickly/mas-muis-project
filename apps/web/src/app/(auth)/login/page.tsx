@@ -40,6 +40,7 @@ export default function Login() {
         redirect: false,
       });
       if (result?.error) {
+        toast("Login Failed, make sure your email and password are correct");
         console.error(result.error);
       } else {
         toast("Login success");

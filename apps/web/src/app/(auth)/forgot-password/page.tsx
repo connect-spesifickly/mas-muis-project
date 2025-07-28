@@ -37,7 +37,7 @@ export default function ForgotPasswordRequest() {
         email: values.email,
       });
       toast("Request success");
-      router.push("/Owner/login");
+      router.push("/login");
     } catch (error) {
       toast("Request Failed");
       console.error(error);
