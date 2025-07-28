@@ -15,28 +15,72 @@ class TransactionService {
     userRole?: string;
   }) {
     const where: any = {};
+    let startDate: Date | null = null;
+
+    // 1. Tentukan rentang tanggal dan tanggal mulai (startDate)
     if (month && year) {
-      const start = new Date(year, month - 1, 1);
-      const end = new Date(year, month, 0, 23, 59, 59, 999);
-      where.transactionDate = { gte: start, lte: end };
+      startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+      where.transactionDate = { gte: startDate, lte: endDate };
     }
+
+    // 2. Ambil transaksi untuk periode yang dipilih
     const transactions = await prisma.transaction.findMany({
       where,
       orderBy: sortBy ? { [sortBy]: "asc" } : { transactionDate: "asc" },
     });
+
+    // 3. Jika user adalah OWNER, hitung running balance yang benar
     if (userRole === Role.OWNER) {
-      // Hitung runningBalance
-      let runningBalance = 0;
+      let openingBalance = 0;
+
+      // 3a. Hitung saldo awal JIKA ada filter tanggal
+      if (startDate) {
+        // Hitung total semua INCOME sebelum startDate
+        const totalIncomeBefore = await prisma.transaction.aggregate({
+          _sum: {
+            amount: true,
+          },
+          where: {
+            transactionDate: { lt: startDate }, // lt = less than
+            type: TransactionType.INCOME,
+          },
+        });
+
+        // Hitung total semua EXPENSE sebelum startDate
+        const totalExpenseBefore = await prisma.transaction.aggregate({
+          _sum: {
+            amount: true,
+          },
+          where: {
+            transactionDate: { lt: startDate },
+            type: TransactionType.EXPENSE,
+          },
+        });
+
+        const income = totalIncomeBefore._sum.amount || 0;
+        const expense = totalExpenseBefore._sum.amount || 0;
+
+        openingBalance = Number(income) - Number(expense);
+      }
+
+      // 3b. Inisialisasi runningBalance dengan saldo awal
+      let runningBalance = openingBalance;
+
+      // 3c. Proses transaksi bulan ini dan tambahkan runningBalance
       const result = transactions.map((t) => {
-        runningBalance +=
-          t.type === TransactionType.INCOME
-            ? Number(t.amount)
-            : -Number(t.amount);
+        const transactionAmount = Number(t.amount);
+        if (t.type === TransactionType.INCOME) {
+          runningBalance += transactionAmount;
+        } else {
+          runningBalance -= transactionAmount;
+        }
         return { ...t, runningBalance };
       });
+
       return result;
     } else {
-      // Akuntan: tanpa saldo
+      // Akuntan atau role lain tidak perlu melihat running balance
       return transactions;
     }
   }
