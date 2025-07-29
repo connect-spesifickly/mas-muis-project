@@ -54,7 +54,6 @@ const fetchCustomersApi = async (
     currentPage: d.currentPage,
   };
 };
-
 export function useCustomers(params: UseCustomerParams) {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
