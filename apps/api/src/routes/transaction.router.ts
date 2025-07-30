@@ -14,5 +14,15 @@ export const transactionRouter = () => {
     requireRole(["OWNER", "ACCOUNTANT"]),
     TransactionController.create
   );
+  router.put(
+    "/:id",
+    requireRole(["OWNER", "ACCOUNTANT"]),
+    TransactionController.update
+  );
+  router.delete(
+    "/:id",
+    requireRole(["OWNER", "ACCOUNTANT"]),
+    TransactionController.delete
+  );
   return router;
 };

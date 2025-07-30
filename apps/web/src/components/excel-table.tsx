@@ -65,6 +65,7 @@ interface ExcelTableProps<
   data: T[];
   columns: Column[];
   showRunningBalance?: boolean;
+  showDuplicate?: boolean;
   onAdd?: (data: T) => Promise<void>;
   onUpdate?: (id: string, data: Partial<T>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
@@ -85,6 +86,7 @@ export default function ExcelTable<
   data,
   columns,
   showRunningBalance = false,
+  showDuplicate = true,
   onAdd,
   onUpdate,
   onDelete,
@@ -98,6 +100,9 @@ export default function ExcelTable<
     key: string;
     direction: "asc" | "desc";
   } | null>(null);
+  const [pendingChanges, setPendingChanges] = useState<
+    Record<string, Partial<T>>
+  >({});
   const [globalSearch, setGlobalSearch] = useState("");
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,6 +114,10 @@ export default function ExcelTable<
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
+    console.log("ExcelTable - tableData:", tableData);
+    console.log("ExcelTable - sortConfig:", sortConfig);
+    console.log("ExcelTable - showRunningBalance:", showRunningBalance);
+
     const filtered = tableData.filter((row) => {
       // Global search
       if (globalSearch) {
@@ -127,18 +136,38 @@ export default function ExcelTable<
       });
     });
 
-    // Sort by transactionDate descending (newest first) if showRunningBalance is enabled
-    // This ensures newest transaction dates appear at the top
-    if (showRunningBalance) {
-      console.log("Sorting transactions for running balance...");
-      console.log(
-        "Before sorting:",
-        filtered.map((t) => ({
-          id: t.id,
-          transactionDate: t.transactionDate,
-        }))
-      );
+    // Apply sorting - manual sorting takes priority over running balance sorting
+    if (sortConfig) {
+      // Manual sorting by user clicking column headers
+      console.log("Manual sorting by:", sortConfig.key, sortConfig.direction);
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
 
+        // Handle different data types
+        if (aValue instanceof Date && bValue instanceof Date) {
+          return sortConfig.direction === "asc"
+            ? aValue.getTime() - bValue.getTime()
+            : bValue.getTime() - aValue.getTime();
+        }
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return sortConfig.direction === "asc"
+            ? aValue - bValue
+            : bValue - aValue;
+        }
+
+        // Convert to string for comparison
+        const aString = String(aValue || "");
+        const bString = String(bValue || "");
+
+        if (aString < bString) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aString > bString) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    } else if (showRunningBalance) {
+      // Default sorting for running balance when no manual sort is applied
+      console.log("Default running balance sorting...");
       filtered.sort((a, b) => {
         // Use transactionDate for manual date ordering
         const aTransactionDate = a.transactionDate
@@ -162,34 +191,26 @@ export default function ExcelTable<
 
         return bTransactionDate.getTime() - aTransactionDate.getTime(); // Descending order (newest first)
       });
-
-      console.log(
-        "After sorting:",
-        filtered.map((t) => ({
-          id: t.id,
-          transactionDate: t.transactionDate,
-        }))
-      );
-    } else if (sortConfig) {
-      // Default sorting for other cases
-      filtered.sort((a, b) => {
-        const aValue = String(a[sortConfig.key] || "");
-        const bValue = String(b[sortConfig.key] || "");
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
     }
 
     return filtered;
   }, [tableData, filters, sortConfig, globalSearch, showRunningBalance]);
 
   const handleSort = (key: string) => {
+    console.log("Sorting clicked for key:", key);
     setSortConfig((current) => {
       if (current?.key === key) {
-        return current.direction === "asc" ? { key, direction: "desc" } : null;
+        // If same column, cycle: asc -> desc -> null (no sort)
+        if (current.direction === "asc") {
+          console.log("Changing to desc");
+          return { key, direction: "desc" };
+        } else {
+          console.log("Removing sort");
+          return null;
+        }
       }
+      // New column, start with asc
+      console.log("New column sort, starting with asc");
       return { key, direction: "asc" };
     });
   };
@@ -215,27 +236,63 @@ export default function ExcelTable<
     }
   };
 
-  const handleEditRow = async (
-    rowId: string,
-    field: string,
-    value: unknown
-  ) => {
-    if (!onUpdate) {
-      // Fallback to local state update if no API handler
-      setTableData((prev) =>
-        prev.map((row) =>
-          String(row.id) === rowId ? { ...row, [field]: value } : row
-        )
-      );
+  const handleEditRow = (rowId: string, field: string, value: unknown) => {
+    // Store changes in pendingChanges instead of immediately updating
+    setPendingChanges((prev) => ({
+      ...prev,
+      [rowId]: {
+        ...prev[rowId],
+        [field]: value,
+      },
+    }));
+
+    // Update local table data for immediate UI feedback
+    setTableData((prev) =>
+      prev.map((row) =>
+        String(row.id) === rowId ? { ...row, [field]: value } : row
+      )
+    );
+  };
+
+  const handleSaveChanges = async (rowId: string) => {
+    if (!onUpdate || !pendingChanges[rowId]) {
+      setEditingRow(null);
+      setPendingChanges((prev) => {
+        const newPending = { ...prev };
+        delete newPending[rowId];
+        return newPending;
+      });
       return;
     }
 
     try {
-      const updatedData = { [field]: value } as Partial<T>;
-      await onUpdate(rowId, updatedData);
+      await onUpdate(rowId, pendingChanges[rowId]);
+
+      // Clear pending changes and exit edit mode
+      setPendingChanges((prev) => {
+        const newPending = { ...prev };
+        delete newPending[rowId];
+        return newPending;
+      });
+      setEditingRow(null);
     } catch (error) {
-      console.error("Failed to update row:", error);
+      console.error("Failed to save changes:", error);
+      // Revert local changes on error
+      setTableData(data);
     }
+  };
+
+  const handleCancelEdit = (rowId: string) => {
+    // Revert local changes
+    setTableData(data);
+
+    // Clear pending changes and exit edit mode
+    setPendingChanges((prev) => {
+      const newPending = { ...prev };
+      delete newPending[rowId];
+      return newPending;
+    });
+    setEditingRow(null);
   };
 
   const handleDeleteRow = async (rowId: string) => {
@@ -587,52 +644,75 @@ export default function ExcelTable<
                       </TableCell>
                     )}
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {onUpdate && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setEditingRow(
-                                  editingRow === rowId ? null : rowId
-                                )
-                              }
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              {editingRow === rowId ? "Selesai Edit" : "Edit"}
-                            </DropdownMenuItem>
-                          )}
-                          {onDelete && (
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteRow(rowId)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Hapus
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleDuplicateRow(row)}
+                      {editingRow === rowId ? (
+                        // Show Save/Cancel buttons when editing
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSaveChanges(rowId)}
+                            className="text-green-600 hover:text-green-700"
                           >
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplikat
-                          </DropdownMenuItem>
-                          {customActions.map((action, idx) =>
-                            action.visible !== false ? (
+                            <Save className="h-4 w-4 mr-1" />
+                            Simpan
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelEdit(rowId)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Batal
+                          </Button>
+                        </div>
+                      ) : (
+                        // Show dropdown menu when not editing
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {onUpdate && (
                               <DropdownMenuItem
-                                key={idx}
-                                onClick={() => action.onClick(rowId)}
+                                onClick={() => setEditingRow(rowId)}
                               >
-                                {getIconComponent(action.icon)}
-                                <span className="ml-2">{action.label}</span>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
                               </DropdownMenuItem>
-                            ) : null
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            )}
+                            {onDelete && (
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteRow(rowId)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Hapus
+                              </DropdownMenuItem>
+                            )}
+                            {showDuplicate && (
+                              <DropdownMenuItem
+                                onClick={() => handleDuplicateRow(row)}
+                              >
+                                <Copy className="h-4 w-4 mr-2" />
+                                Duplikat
+                              </DropdownMenuItem>
+                            )}
+                            {customActions.map((action, idx) =>
+                              action.visible !== false ? (
+                                <DropdownMenuItem
+                                  key={idx}
+                                  onClick={() => action.onClick(rowId)}
+                                >
+                                  {getIconComponent(action.icon)}
+                                  <span className="ml-2">{action.label}</span>
+                                </DropdownMenuItem>
+                              ) : null
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

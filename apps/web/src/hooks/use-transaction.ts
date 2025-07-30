@@ -161,12 +161,81 @@ export function useTransactions(params?: UseTransactionParams) {
     }
   };
 
+  const updateTransaction = async (
+    id: string,
+    dataInput: Partial<CreateTransactionData>
+  ) => {
+    try {
+      console.log("Updating transaction:", id, dataInput);
+      const updatedTransaction = await transactionApi.update(
+        id,
+        dataInput,
+        token
+      );
+      toast.success("Transaksi berhasil diperbarui");
+
+      // Revalidate the transactions list
+      mutate();
+
+      return updatedTransaction;
+    } catch (error: unknown) {
+      console.error("Failed to update transaction:", error);
+
+      let errorMessage = "Gagal memperbarui transaksi";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { error?: { message?: string } } };
+        };
+        if (axiosError.response?.data?.error?.message) {
+          errorMessage = axiosError.response.data.error.message;
+        }
+      } else if (error && typeof error === "object" && "message" in error) {
+        const errorObj = error as { message: string };
+        errorMessage = errorObj.message;
+      }
+
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  const deleteTransaction = async (id: string) => {
+    try {
+      console.log("Deleting transaction:", id);
+      await transactionApi.delete(id, token);
+      toast.success("Transaksi berhasil dihapus");
+
+      // Revalidate the transactions list
+      mutate();
+    } catch (error: unknown) {
+      console.error("Failed to delete transaction:", error);
+
+      let errorMessage = "Gagal menghapus transaksi";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { error?: { message?: string } } };
+        };
+        if (axiosError.response?.data?.error?.message) {
+          errorMessage = axiosError.response.data.error.message;
+        }
+      } else if (error && typeof error === "object" && "message" in error) {
+        const errorObj = error as { message: string };
+        errorMessage = errorObj.message;
+      }
+
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
   return {
     transactions,
     isLoading,
     error,
     isValidating,
     createTransaction,
+    updateTransaction,
+    deleteTransaction,
     refetch: () => mutate(),
   };
 }

@@ -38,6 +38,38 @@ class TransactionController {
       next(err);
     }
   }
+
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = (req as UserRequest).user?.id;
+      const result = await transactionService.update(id, req.body, userId);
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "Transaction updated",
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = (req as UserRequest).user?.id;
+      await transactionService.delete(id, userId);
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "Transaction deleted",
+        data: null,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default new TransactionController();

@@ -131,6 +131,39 @@ class TransactionService {
       }
     });
   }
+
+  async update(id: string, data: any, userId?: string) {
+    // Check if transaction exists
+    const existingTransaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!existingTransaction) {
+      throw new ResponseError(404, "Transaction not found");
+    }
+
+    // Update transaction
+    return prisma.transaction.update({
+      where: { id },
+      data: { ...data, recordedById: userId },
+    });
+  }
+
+  async delete(id: string, userId?: string) {
+    // Check if transaction exists
+    const existingTransaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!existingTransaction) {
+      throw new ResponseError(404, "Transaction not found");
+    }
+
+    // Delete transaction
+    return prisma.transaction.delete({
+      where: { id },
+    });
+  }
 }
 
 export default new TransactionService();
