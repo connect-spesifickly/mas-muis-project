@@ -1,25 +1,41 @@
 import { api } from "@/utils/axios";
 import type {
-  TransactionListResponse,
-  TransactionResponse,
+  Transaction,
   CreateTransactionData,
-  UpdateTransactionData,
   TransactionFilters,
 } from "@/types/transaction";
 
 export const transactionApi = {
-  list: async (params?: TransactionFilters, token?: string) => {
-    const response = await api.get<TransactionListResponse>("/transactions", {
-      params,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
+  list: async (
+    params?: TransactionFilters,
+    token?: string
+  ): Promise<Transaction[]> => {
+    console.log("Transaction API - Listing transactions with params:", params);
+    console.log("Transaction API - Token:", token ? "Present" : "Missing");
+
+    try {
+      const response = await api.get<Transaction[]>("/transactions", {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("Transaction API - List response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Transaction API - List error:", error);
+      throw error;
+    }
   },
 
-  create: async (data: CreateTransactionData, token?: string) => {
-    const response = await api.post<TransactionResponse>(
+  create: async (
+    data: CreateTransactionData,
+    token?: string
+  ): Promise<Transaction> => {
+    console.log("Transaction API - Creating transaction with data:", data);
+    console.log("Transaction API - Token:", token ? "Present" : "Missing");
+
+    const response = await api.post<{ data: Transaction }>(
       "/transactions",
       data,
       {
@@ -28,28 +44,7 @@ export const transactionApi = {
         },
       }
     );
+    console.log("Transaction API - Response:", response.data);
     return response.data.data;
-  },
-
-  update: async (id: string, data: UpdateTransactionData, token?: string) => {
-    const response = await api.patch<TransactionResponse>(
-      `/transactions/${id}`,
-      data,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data.data;
-  },
-
-  delete: async (id: string, token?: string) => {
-    const response = await api.delete(`/transactions/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
   },
 };

@@ -69,6 +69,13 @@ interface ExcelTableProps<
   onUpdate?: (id: string, data: Partial<T>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   customActions?: CustomAction[];
+  customCellRenderer?: (
+    column: Column,
+    value: unknown,
+    row: T,
+    isEditing: boolean,
+    onChange?: (value: unknown) => void
+  ) => React.ReactNode;
 }
 
 export default function ExcelTable<
@@ -82,6 +89,7 @@ export default function ExcelTable<
   onUpdate,
   onDelete,
   customActions = [],
+  customCellRenderer,
 }: ExcelTableProps<T>) {
   const [tableData, setTableData] = useState<T[]>(data);
   const [newRow, setNewRow] = useState<Partial<T>>({});
@@ -119,8 +127,51 @@ export default function ExcelTable<
       });
     });
 
-    // Sort
-    if (sortConfig) {
+    // Sort by transactionDate descending (newest first) if showRunningBalance is enabled
+    // This ensures newest transaction dates appear at the top
+    if (showRunningBalance) {
+      console.log("Sorting transactions for running balance...");
+      console.log(
+        "Before sorting:",
+        filtered.map((t) => ({
+          id: t.id,
+          transactionDate: t.transactionDate,
+        }))
+      );
+
+      filtered.sort((a, b) => {
+        // Use transactionDate for manual date ordering
+        const aTransactionDate = a.transactionDate
+          ? new Date(String(a.transactionDate))
+          : new Date(0);
+        const bTransactionDate = b.transactionDate
+          ? new Date(String(b.transactionDate))
+          : new Date(0);
+
+        // If transactionDate is the same, use createdAt as secondary sort
+        if (aTransactionDate.getTime() === bTransactionDate.getTime()) {
+          const aCreatedAt = a.createdAt
+            ? new Date(String(a.createdAt))
+            : new Date(0);
+          const bCreatedAt = b.createdAt
+            ? new Date(String(b.createdAt))
+            : new Date(0);
+
+          return bCreatedAt.getTime() - aCreatedAt.getTime(); // Newest input first
+        }
+
+        return bTransactionDate.getTime() - aTransactionDate.getTime(); // Descending order (newest first)
+      });
+
+      console.log(
+        "After sorting:",
+        filtered.map((t) => ({
+          id: t.id,
+          transactionDate: t.transactionDate,
+        }))
+      );
+    } else if (sortConfig) {
+      // Default sorting for other cases
       filtered.sort((a, b) => {
         const aValue = String(a[sortConfig.key] || "");
         const bValue = String(b[sortConfig.key] || "");
@@ -132,7 +183,7 @@ export default function ExcelTable<
     }
 
     return filtered;
-  }, [tableData, filters, sortConfig, globalSearch]);
+  }, [tableData, filters, sortConfig, globalSearch, showRunningBalance]);
 
   const handleSort = (key: string) => {
     setSortConfig((current) => {
@@ -217,7 +268,19 @@ export default function ExcelTable<
   ) => {
     if (!isEditing) {
       if (column.type === "number") {
-        const numValue = typeof value === "number" ? value : 0;
+        // Handle different number formats (string, number, Decimal from Prisma)
+        let numValue = 0;
+        if (typeof value === "number") {
+          numValue = value;
+        } else if (typeof value === "string") {
+          numValue = parseFloat(value) || 0;
+        } else if (value && typeof value === "object" && "toNumber" in value) {
+          // Handle Prisma Decimal
+          numValue = (value as { toNumber: () => number }).toNumber();
+        } else if (value !== null && value !== undefined) {
+          numValue = Number(value) || 0;
+        }
+
         if (showRunningBalance && column.key === "amount") {
           return (
             <div className="flex items-center justify-between">
@@ -232,6 +295,18 @@ export default function ExcelTable<
             </div>
           );
         }
+
+        // Check if this is an expense transaction
+        // For amount column, we need to check the row data to determine if it's expense
+        // This will be handled in the specific component that uses ExcelTable
+        return (
+          <span>
+            {new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+            }).format(Math.abs(numValue))}
+          </span>
+        );
         return <span>{new Intl.NumberFormat("id-ID").format(numValue)}</span>;
       }
       if (column.type === "date") {
@@ -245,7 +320,11 @@ export default function ExcelTable<
           <span>{dateValue ? dateValue.toLocaleDateString("id-ID") : ""}</span>
         );
       }
-      return <span>{String(value || "")}</span>;
+      return (
+        <span className="break-words whitespace-pre-wrap">
+          {String(value || "")}
+        </span>
+      );
     }
 
     switch (column.type) {
@@ -253,7 +332,7 @@ export default function ExcelTable<
         return (
           <Select value={String(value || "")} onValueChange={onChange}>
             <SelectTrigger className="h-8">
-              <SelectValue />
+              <SelectValue placeholder="Pilih..." />
             </SelectTrigger>
             <SelectContent>
               {column.options?.map((option) => (
@@ -397,6 +476,11 @@ export default function ExcelTable<
                     </div>
                   </TableHead>
                 ))}
+                {showRunningBalance && (
+                  <TableHead className="text-gray-500 font-normal bg-white/80 border-b-0 py-3">
+                    Saldo
+                  </TableHead>
+                )}
                 <TableHead className="w-[120px] bg-white/80 text-gray-500 font-normal border-b-0 last:rounded-tr-lg py-3">
                   Actions
                 </TableHead>
@@ -405,14 +489,42 @@ export default function ExcelTable<
             <TableBody>
               {/* Input Row */}
               {onAdd && (
-                <TableRow className="bg-green-50 hover:bg-green-100 transition-all">
+                <TableRow className="bg-green-50 hover:bg-green-100 transition-all sticky top-0 z-10">
                   {columns.map((column) => (
-                    <TableCell key={column.key}>
-                      {renderCell(column, newRow[column.key], true, (value) =>
-                        setNewRow((prev) => ({ ...prev, [column.key]: value }))
-                      )}
+                    <TableCell key={column.key} className="max-w-[200px]">
+                      {(() => {
+                        if (customCellRenderer) {
+                          const customResult = customCellRenderer(
+                            column,
+                            newRow[column.key],
+                            newRow as T,
+                            true,
+                            (value) =>
+                              setNewRow((prev) => ({
+                                ...prev,
+                                [column.key]: value,
+                              }))
+                          );
+                          if (customResult !== undefined) {
+                            return customResult;
+                          }
+                        }
+                        return renderCell(
+                          column,
+                          newRow[column.key],
+                          true,
+                          (value) =>
+                            setNewRow((prev) => ({
+                              ...prev,
+                              [column.key]: value,
+                            }))
+                        );
+                      })()}
                     </TableCell>
                   ))}
+                  {showRunningBalance && (
+                    <TableCell className="text-gray-400 italic">-</TableCell>
+                  )}
                   <TableCell>
                     <Button
                       onClick={handleAddRow}
@@ -437,15 +549,43 @@ export default function ExcelTable<
                     } hover:bg-blue-50 transition-colors duration-200`}
                   >
                     {columns.map((column) => (
-                      <TableCell key={column.key}>
-                        {renderCell(
-                          column,
-                          row[column.key],
-                          editingRow === rowId,
-                          (value) => handleEditRow(rowId, column.key, value)
-                        )}
+                      <TableCell key={column.key} className="max-w-[200px]">
+                        {(() => {
+                          if (customCellRenderer) {
+                            const customResult = customCellRenderer(
+                              column,
+                              row[column.key],
+                              row,
+                              editingRow === rowId,
+                              (value) => handleEditRow(rowId, column.key, value)
+                            );
+                            if (customResult !== undefined) {
+                              return customResult;
+                            }
+                          }
+                          return renderCell(
+                            column,
+                            row[column.key],
+                            editingRow === rowId,
+                            (value) => handleEditRow(rowId, column.key, value)
+                          );
+                        })()}
                       </TableCell>
                     ))}
+                    {showRunningBalance && (
+                      <TableCell>
+                        {row.runningBalance ? (
+                          <span className="font-medium">
+                            {new Intl.NumberFormat("id-ID", {
+                              style: "currency",
+                              currency: "IDR",
+                            }).format(Number(row.runningBalance))}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

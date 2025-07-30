@@ -62,6 +62,14 @@ class TransactionService {
         const expense = totalExpenseBefore._sum.amount || 0;
 
         openingBalance = Number(income) - Number(expense);
+
+        console.log("Opening balance calculation:", {
+          startDate,
+          income,
+          expense,
+          openingBalance,
+          transactionsCount: transactions.length,
+        });
       }
 
       // 3b. Inisialisasi runningBalance dengan saldo awal
@@ -75,6 +83,11 @@ class TransactionService {
         } else {
           runningBalance -= transactionAmount;
         }
+
+        console.log(
+          `Transaction ${t.id}: ${t.type} ${transactionAmount} -> Running Balance: ${runningBalance}`
+        );
+
         return { ...t, runningBalance };
       });
 
