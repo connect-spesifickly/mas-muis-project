@@ -28,6 +28,7 @@ export default function MainLayout({
     if (pathname.startsWith("/customer")) return "customer";
     if (pathname.startsWith("/transaction")) return "transaction";
     if (pathname.startsWith("/financial-report")) return "financial-report";
+    if (pathname.startsWith("/asset-stock")) return "asset-stock";
     if (pathname.startsWith("/adjustment")) return "adjustment";
     return "sale";
   };
@@ -144,6 +145,27 @@ export default function MainLayout({
     },
     {
       id: 6,
+      label: "Asset & Stock",
+      icon: (
+        <svg
+          className="w-full h-full"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+          />
+        </svg>
+      ),
+      href: "/asset-stock",
+    },
+    {
+      id: 7,
       label: "Adjustment",
       icon: (
         <svg

@@ -30,6 +30,7 @@ export function SidebarPage({ activePage }: SidebarProps) {
     { id: "customer", label: "Customer", icon: "users" },
     { id: "transaction", label: "Transaction", icon: "credit-card" },
     { id: "financial-report", label: "Financial Report", icon: "trending-up" },
+    { id: "asset-stock", label: "Asset & Stock", icon: "package" },
     { id: "adjustment", label: "Adjustment", icon: "adjustment" },
   ];
   const getIcon = (icon: string) => {
@@ -139,6 +140,23 @@ export function SidebarPage({ activePage }: SidebarProps) {
             />
           </svg>
         );
+      case "package":
+        return (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+        );
       default:
         return null;
     }
@@ -170,6 +188,9 @@ export function SidebarPage({ activePage }: SidebarProps) {
                         const currentMonth = new Date().getMonth() + 1;
                         const currentYear = new Date().getFullYear();
                         mutate(["financial-report", currentMonth, currentYear]);
+                      } else if (item.id === "asset-stock") {
+                        mutate(["assets"]);
+                        mutate(["stocks"]);
                       } else if (item.id === "adjustment") {
                         mutate(["stock-adjustments"]);
                       } else if (item.id === "customer") {

@@ -6,6 +6,7 @@ import { customerRouter } from "./customer.router";
 import { itemRouter } from "./item.router";
 import { transactionRouter } from "./transaction.router";
 import { reportRouter } from "./report.router";
+import { assetStockRouter } from "./asset-stock.router";
 
 const apiRouter = Router();
 
@@ -16,5 +17,6 @@ apiRouter.use("/customers", customerRouter());
 apiRouter.use("/items", itemRouter());
 apiRouter.use("/transactions", transactionRouter());
 apiRouter.use("/reports", reportRouter());
+apiRouter.use("/asset-stock", assetStockRouter());
 
 export default apiRouter;

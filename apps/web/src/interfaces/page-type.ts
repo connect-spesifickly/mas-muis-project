@@ -4,4 +4,5 @@ export type PageType =
   | "financial-report"
   | "adjustment"
   | "customer"
-  | "transaction";
+  | "transaction"
+  | "asset-stock";
