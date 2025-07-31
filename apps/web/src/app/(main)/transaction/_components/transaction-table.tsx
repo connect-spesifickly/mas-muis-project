@@ -141,7 +141,6 @@ export function TransactionTable({
           onAdd={onAdd}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          loading={loading}
           customCellRenderer={customCellRenderer}
         />
       </CardContent>
