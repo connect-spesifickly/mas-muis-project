@@ -93,6 +93,7 @@ export default function AssetStockPage() {
     try {
       await createAsset(data);
       toast.success("Aset berhasil ditambahkan");
+      handleCloseAddModal();
     } catch (error) {
       console.error("Error creating asset:", error);
       toast.error("Gagal menambahkan aset. Silakan coba lagi.");
@@ -103,6 +104,7 @@ export default function AssetStockPage() {
     try {
       await createStock(data);
       toast.success("Stok berhasil ditambahkan");
+      handleCloseAddModal();
     } catch (error) {
       console.error("Error creating stock:", error);
       toast.error("Gagal menambahkan stok. Silakan coba lagi.");

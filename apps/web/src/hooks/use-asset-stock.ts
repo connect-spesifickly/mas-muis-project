@@ -17,11 +17,18 @@ export function useAssets() {
 
   const { data, error, mutate } = useSWR(
     status === "authenticated" ? "assets" : null,
-    () => assetStockApi.getAssets(token)
+    async () => {
+      console.log("Fetching assets with token:", token);
+      const result = await assetStockApi.getAssets(token);
+      console.log("Assets API response:", result);
+      return result;
+    }
   );
 
   const createAsset = async (data: CreateAssetData) => {
-    await assetStockApi.createAsset(data, token);
+    console.log("Creating asset with data:", data);
+    const result = await assetStockApi.createAsset(data, token);
+    console.log("Create asset result:", result);
     mutate();
   };
 
@@ -36,7 +43,7 @@ export function useAssets() {
   };
 
   return {
-    assets: data?.data || [],
+    assets: data?.assets || [],
     totalValue: data?.totalValue || 0,
     loading: !data && !error,
     error,
@@ -53,11 +60,18 @@ export function useStocks() {
 
   const { data, error, mutate } = useSWR(
     status === "authenticated" ? "stocks" : null,
-    () => assetStockApi.getStocks(token)
+    async () => {
+      console.log("Fetching stocks with token:", token);
+      const result = await assetStockApi.getStocks(token);
+      console.log("Stocks API response:", result);
+      return result;
+    }
   );
 
   const createStock = async (data: CreateStockData) => {
-    await assetStockApi.createStock(data, token);
+    console.log("Creating stock with data:", data);
+    const result = await assetStockApi.createStock(data, token);
+    console.log("Create stock result:", result);
     mutate();
   };
 
@@ -72,7 +86,7 @@ export function useStocks() {
   };
 
   return {
-    stocks: data?.data || [],
+    stocks: data?.stocks || [],
     totalValue: data?.totalValue || 0,
     loading: !data && !error,
     error,

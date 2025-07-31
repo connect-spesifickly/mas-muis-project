@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiResponse } from "../helpers/api-response";
-import assetStockService from "../services/asset-stock.service";
+import itemService from "../services/asset-stock.service";
 import { ItemType } from "@prisma/client";
 
 class AssetStockController {
   async getAssets(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await assetStockService.getAssets();
+      const result = await itemService.getItems(ItemType.ASSET);
       ApiResponse({
         res,
         statusCode: 200,
@@ -20,7 +20,7 @@ class AssetStockController {
 
   async getStocks(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await assetStockService.getStocks();
+      const result = await itemService.getItems(ItemType.STOCK);
       ApiResponse({
         res,
         statusCode: 200,
@@ -61,7 +61,7 @@ class AssetStockController {
         return;
       }
 
-      const asset = await assetStockService.createAsset({
+      const asset = await itemService.createItem({
         name,
         description,
         quantity: Number(quantity),
@@ -109,7 +109,7 @@ class AssetStockController {
         return;
       }
 
-      const stock = await assetStockService.createStock({
+      const stock = await itemService.createItem({
         name,
         description,
         quantity: Number(quantity),
@@ -157,7 +157,11 @@ class AssetStockController {
       if (purchasePrice !== undefined)
         updateData.purchasePrice = Number(purchasePrice);
 
-      const asset = await assetStockService.updateAsset(id, updateData);
+      const asset = await itemService.updateItem(
+        id,
+        ItemType.ASSET,
+        updateData
+      );
 
       ApiResponse({
         res,
@@ -199,7 +203,11 @@ class AssetStockController {
       if (purchasePrice !== undefined)
         updateData.purchasePrice = Number(purchasePrice);
 
-      const stock = await assetStockService.updateStock(id, updateData);
+      const stock = await itemService.updateItem(
+        id,
+        ItemType.STOCK,
+        updateData
+      );
 
       ApiResponse({
         res,
@@ -215,7 +223,7 @@ class AssetStockController {
   async deleteAsset(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      await assetStockService.deleteAsset(id);
+      await itemService.deleteItem(id, ItemType.ASSET);
 
       ApiResponse({
         res,
@@ -231,7 +239,7 @@ class AssetStockController {
   async deleteStock(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      await assetStockService.deleteStock(id);
+      await itemService.deleteItem(id, ItemType.STOCK);
 
       ApiResponse({
         res,
@@ -274,7 +282,7 @@ class AssetStockController {
         return;
       }
 
-      const result = await assetStockService.createAdjustment({
+      const result = await itemService.createAdjustment({
         itemId,
         quantityChange: Number(quantityChange),
         reason,

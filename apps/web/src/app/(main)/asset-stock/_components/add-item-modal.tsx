@@ -48,7 +48,7 @@ export function AddItemModal({
     setIsLoading(true);
     try {
       await onAdd(data);
-      handleClose();
+      // Modal will be closed by the parent component after successful creation
     } catch (error) {
       console.error("Error adding item:", error);
     } finally {

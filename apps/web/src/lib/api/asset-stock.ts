@@ -19,7 +19,7 @@ export const assetStockApi = {
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data.data as AssetListResponse;
+    return response.data as AssetListResponse;
   },
 
   createAsset: async (
@@ -62,7 +62,7 @@ export const assetStockApi = {
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data.data as StockListResponse;
+    return response.data as StockListResponse;
   },
 
   createStock: async (
