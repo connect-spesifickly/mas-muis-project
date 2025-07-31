@@ -1,17 +1,8 @@
-import { reportApi } from "@/lib/api/report";
-import { stockAdjustmentApi } from "@/lib/api/stock-adjustment";
-import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import type { StockAdjustment } from "@/types/stock-adjustment";
+import { useSession } from "next-auth/react";
+import { reportApi } from "@/lib/api/report";
 
-export interface DailyTransaction {
-  date: string;
-  revenue: number;
-  profit: number;
-  loss: number;
-  transactionCount: number;
-}
-
+// Types untuk Financial Report
 export interface MonthlySummary {
   omset: number;
   totalPengeluaran: number;
@@ -41,165 +32,98 @@ export interface MonthlyOmsetData {
   omset: number;
 }
 
-const fetchReportApi = async (
-  dateFrom: string,
-  dateTo: string,
-  token?: string
-) => {
-  const [salesReport, profitReport, lossesReport, dailyTransactionsRes] =
-    await Promise.all([
-      reportApi.getSalesReport(dateFrom, dateTo, token) as Promise<{
-        data: { totalOmzet: number; jumlahTransaksi: number };
-      }>,
-      reportApi.getProfitReport(dateFrom, dateTo, token) as Promise<{
-        data: { totalProfit: number };
-      }>,
-      reportApi.getLossesReport(dateFrom, dateTo, token) as Promise<{
-        data: { totalLossValue: number };
-      }>,
-      reportApi.getDailyTransactions(dateFrom, dateTo, token) as Promise<{
-        data: DailyTransaction[];
-      }>,
-    ]);
-  let stockAdjustments: StockAdjustment[] = [];
-  try {
-    const { adjustments } = await stockAdjustmentApi.getAll(
-      {
-        startDate: dateFrom,
-        endDate: dateTo,
-        take: 100,
-      },
-      token
-    );
-    stockAdjustments = adjustments;
-  } catch {
-    stockAdjustments = [];
+// Helper function to extract data from API response
+const extractData = <T>(response: unknown): T => {
+  if (
+    response &&
+    typeof response === "object" &&
+    response !== null &&
+    "data" in response
+  ) {
+    return (response as { data: T }).data;
   }
-  return {
-    reportData: {
-      totalOmzet: salesReport.data.totalOmzet || 0,
-      jumlahTransaksi: salesReport.data.jumlahTransaksi || 0,
-      totalProfit: profitReport.data.totalProfit || 0,
-      totalLossValue: lossesReport.data.totalLossValue || 0,
-    },
-    stockAdjustments,
-    dailyTransactions: dailyTransactionsRes.data || [],
-  };
+  return response as T;
 };
 
-const fetchFinancialReportApi = async (
-  month: number,
-  year: number,
-  token?: string
-) => {
-  try {
-    console.log("Fetching financial report data:", { month, year, token: !!token });
-    
-    const [
-      monthlySummaryRes,
-      cashPositionRes,
-      companyValuationRes,
-      yearlyGraphDataRes,
-      monthlyOmsetRes,
-    ] = await Promise.all([
-      reportApi.getMonthlySummary(month, year, token) as Promise<{
-        data: MonthlySummary;
-      }>,
-      reportApi.getCashPosition(month, year, token) as Promise<{
-        data: CashPosition;
-      }>,
-      reportApi.getCompanyValuation(year, token) as Promise<{
-        data: CompanyValuation;
-      }>,
-      reportApi.getYearlyGraphData(token) as Promise<{
-        data: YearlyGraphData[];
-      }>,
-      reportApi.getMonthlyOmset(year, token) as Promise<{
-        data: MonthlyOmsetData[];
-      }>,
-    ]);
-
-    console.log("Financial report data fetched successfully:", {
-      monthlySummary: monthlySummaryRes.data,
-      cashPosition: cashPositionRes.data,
-      companyValuation: companyValuationRes.data,
-      yearlyGraphData: yearlyGraphDataRes.data,
-      monthlyOmset: monthlyOmsetRes.data,
-    });
-
-    return {
-      monthlySummary: monthlySummaryRes.data,
-      cashPosition: cashPositionRes.data,
-      companyValuation: companyValuationRes.data,
-      yearlyGraphData: yearlyGraphDataRes.data,
-      monthlyOmset: monthlyOmsetRes.data,
-    };
-  } catch (error) {
-    console.error("Error fetching financial report data:", error);
-    throw error;
-  }
-};
-
-export function useReportData(dateFrom: string, dateTo: string) {
-  const { data: session, status } = useSession();
-  const token = session?.accessToken;
-  const swrKey =
-    status === "authenticated" ? ["report", dateFrom, dateTo, token] : null;
-  const { data, error, isLoading, mutate } = useSWR(
-    swrKey,
-    () => fetchReportApi(dateFrom, dateTo, token),
-    { revalidateOnFocus: false }
-  );
-  return {
-    reportData: data?.reportData || {
-      totalOmzet: 0,
-      totalProfit: 0,
-      totalLossValue: 0,
-      jumlahTransaksi: 0,
-    },
-    stockAdjustments: data?.stockAdjustments || [],
-    loading: isLoading,
-    refreshing: isLoading,
-    fetchReports: mutate,
-    dailyTransactions: data?.dailyTransactions || [],
-    error,
-  };
-}
-
+// Hook untuk Financial Report
 export function useFinancialReportData(month: number, year: number) {
   const { data: session, status } = useSession();
   const token = session?.accessToken;
-  const swrKey =
-    status === "authenticated"
-      ? ["financial-report", month, year, token]
-      : null;
-  const { data, error, isLoading, mutate } = useSWR(
-    swrKey,
-    () => fetchFinancialReportApi(month, year, token),
-    { revalidateOnFocus: false }
+
+  const { data: monthlySummaryResponse, error: monthlySummaryError } = useSWR(
+    status === "authenticated" ? `monthly-summary-${month}-${year}` : null,
+    () => reportApi.getMonthlySummary(month, year, token)
   );
 
+  const { data: cashPositionResponse, error: cashPositionError } = useSWR(
+    status === "authenticated" ? `cash-position-${month}-${year}` : null,
+    () => reportApi.getCashPosition(month, year, token)
+  );
+
+  const { data: companyValuationResponse, error: companyValuationError } =
+    useSWR(
+      status === "authenticated" ? `company-valuation-${year}` : null,
+      () => reportApi.getCompanyValuation(year, token)
+    );
+
+  const { data: yearlyGraphDataResponse, error: yearlyGraphDataError } = useSWR(
+    status === "authenticated" ? `yearly-graph-data-${year}` : null,
+    () => reportApi.getYearlyGraphData(token)
+  );
+
+  const { data: monthlyOmsetResponse, error: monthlyOmsetError } = useSWR(
+    status === "authenticated" ? `monthly-omset-${year}` : null,
+    () => reportApi.getMonthlyOmset(year, token)
+  );
+
+  // Combine all errors
+  const error =
+    monthlySummaryError ||
+    cashPositionError ||
+    companyValuationError ||
+    yearlyGraphDataError ||
+    monthlyOmsetError;
+
+  // Default values
+  const defaultMonthlySummary: MonthlySummary = {
+    omset: 0,
+    totalPengeluaran: 0,
+    hpp: 0,
+    labaBersih: 0,
+  };
+
+  const defaultCashPosition: CashPosition = {
+    saldoAwal: 0,
+    saldoAkhir: 0,
+  };
+
+  const defaultCompanyValuation: CompanyValuation = {
+    totalKas: 0,
+    totalNilaiAset: 0,
+    totalNilaiStok: 0,
+    totalValuasi: 0,
+  };
+
+  // Extract data from responses
+  const monthlySummary =
+    extractData<MonthlySummary>(monthlySummaryResponse) ||
+    defaultMonthlySummary;
+  const cashPosition =
+    extractData<CashPosition>(cashPositionResponse) || defaultCashPosition;
+  const companyValuation =
+    extractData<CompanyValuation>(companyValuationResponse) ||
+    defaultCompanyValuation;
+  const yearlyGraphData =
+    extractData<YearlyGraphData[]>(yearlyGraphDataResponse) || [];
+  const monthlyOmset =
+    extractData<MonthlyOmsetData[]>(monthlyOmsetResponse) || [];
+
   return {
-    monthlySummary: data?.monthlySummary || {
-      omset: 0,
-      totalPengeluaran: 0,
-      hpp: 0,
-      labaBersih: 0,
-    },
-    cashPosition: data?.cashPosition || {
-      saldoAwal: 0,
-      saldoAkhir: 0,
-    },
-    companyValuation: data?.companyValuation || {
-      totalKas: 0,
-      totalNilaiAset: 0,
-      totalNilaiStok: 0,
-      totalValuasi: 0,
-    },
-    yearlyGraphData: data?.yearlyGraphData || [],
-    monthlyOmset: data?.monthlyOmset || [],
-    loading: isLoading,
+    monthlySummary,
+    cashPosition,
+    companyValuation,
+    yearlyGraphData,
+    monthlyOmset,
     error,
-    refetch: mutate,
   };
 }

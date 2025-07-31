@@ -29,7 +29,6 @@ export function SidebarPage({ activePage }: SidebarProps) {
     { id: "product", label: "Product", icon: "box" },
     { id: "customer", label: "Customer", icon: "users" },
     { id: "transaction", label: "Transaction", icon: "credit-card" },
-    { id: "report", label: "Report", icon: "bar-chart" },
     { id: "financial-report", label: "Financial Report", icon: "trending-up" },
     { id: "adjustment", label: "Adjustment", icon: "adjustment" },
   ];
@@ -69,26 +68,6 @@ export function SidebarPage({ activePage }: SidebarProps) {
             />
             <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
             <line x1="12" y1="22.08" x2="12" y2="12" />
-          </svg>
-        );
-      case "bar-chart":
-        return (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M3 3v18h18"
-            />
-            <rect x="7" y="13" width="3" height="5" rx="1" />
-            <rect x="12" y="9" width="3" height="9" rx="1" />
-            <rect x="17" y="6" width="3" height="12" rx="1" />
           </svg>
         );
       case "adjustment":
@@ -187,9 +166,6 @@ export function SidebarPage({ activePage }: SidebarProps) {
                       } else if (item.id === "sale") {
                         mutate(["products"]);
                         mutate(["categories"]);
-                      } else if (item.id === "report") {
-                        const today = new Date().toISOString().split("T")[0];
-                        mutate(["report", today, today]);
                       } else if (item.id === "financial-report") {
                         const currentMonth = new Date().getMonth() + 1;
                         const currentYear = new Date().getFullYear();

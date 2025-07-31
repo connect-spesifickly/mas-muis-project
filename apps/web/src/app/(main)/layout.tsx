@@ -27,7 +27,7 @@ export default function MainLayout({
     if (pathname.startsWith("/product")) return "product";
     if (pathname.startsWith("/customer")) return "customer";
     if (pathname.startsWith("/transaction")) return "transaction";
-    if (pathname.startsWith("/report")) return "report";
+    if (pathname.startsWith("/financial-report")) return "financial-report";
     if (pathname.startsWith("/adjustment")) return "adjustment";
     return "sale";
   };
@@ -77,32 +77,9 @@ export default function MainLayout({
       ),
       href: "/product",
     },
+
     {
       id: 3,
-      label: "Report",
-      icon: (
-        <svg
-          className="w-full h-full"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M3 3v18h18"
-          />
-          <rect x="7" y="13" width="3" height="5" rx="1" />
-          <rect x="12" y="9" width="3" height="9" rx="1" />
-          <rect x="17" y="6" width="3" height="12" rx="1" />
-        </svg>
-      ),
-      href: "/report",
-    },
-    {
-      id: 4,
       label: "Customer",
       icon: (
         <svg
@@ -123,7 +100,7 @@ export default function MainLayout({
       href: "/customer",
     },
     {
-      id: 5,
+      id: 4,
       label: "Transaction",
       icon: (
         <svg
@@ -143,9 +120,10 @@ export default function MainLayout({
       ),
       href: "/transaction",
     },
+
     {
-      id: 6,
-      label: "Report",
+      id: 5,
+      label: "Financial Report",
       icon: (
         <svg
           className="w-full h-full"
@@ -158,17 +136,14 @@ export default function MainLayout({
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2"
-            d="M3 3v18h18"
+            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
           />
-          <rect x="7" y="13" width="3" height="5" rx="1" />
-          <rect x="12" y="9" width="3" height="9" rx="1" />
-          <rect x="17" y="6" width="3" height="12" rx="1" />
         </svg>
       ),
-      href: "/report",
+      href: "/financial-report",
     },
     {
-      id: 7,
+      id: 6,
       label: "Adjustment",
       icon: (
         <svg

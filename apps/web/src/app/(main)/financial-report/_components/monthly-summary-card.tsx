@@ -1,13 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { MonthlySummary } from "@/hooks/use-report";
 
@@ -27,39 +21,36 @@ export function MonthlySummaryCard({
   monthlySummary,
 }: MonthlySummaryCardProps) {
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <TrendingUp className="h-6 w-6 text-green-600" /> DETAIL RINCIAN BULAN
-          INI
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-green-600" />
+          DETAIL RINCIAN BULAN INI
         </CardTitle>
-        <CardDescription className="text-sm text-gray-500">
-          Ringkasan Keuangan
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex justify-between text-lg">
+        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
           <span className="text-gray-700 font-medium">Omset:</span>
-          <span className="font-semibold text-gray-900">
+          <span className="font-bold text-gray-900 text-lg">
             {formatCurrency(monthlySummary.omset)}
           </span>
         </div>
-        <div className="flex justify-between text-lg">
+        <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
           <span className="text-gray-700 font-medium">Total Pengeluaran:</span>
-          <span className="font-semibold text-red-600">
+          <span className="font-bold text-red-600 text-lg">
             {formatCurrency(monthlySummary.totalPengeluaran)}
           </span>
         </div>
-        <div className="flex justify-between text-lg">
+        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
           <span className="text-gray-700 font-medium">HPP:</span>
-          <span className="font-semibold text-gray-900">
+          <span className="font-bold text-gray-900 text-lg">
             {formatCurrency(monthlySummary.hpp)}
           </span>
         </div>
         <Separator className="my-4" />
-        <div className="flex justify-between text-xl font-bold">
-          <span className="text-gray-800">Laba Bersih:</span>
-          <span className="text-green-600">
+        <div className="flex justify-between items-center p-4 bg-green-100 rounded-lg border-2 border-green-200">
+          <span className="text-gray-800 font-bold text-lg">Laba Bersih:</span>
+          <span className="font-bold text-green-700 text-xl">
             {formatCurrency(monthlySummary.labaBersih)}
           </span>
         </div>
