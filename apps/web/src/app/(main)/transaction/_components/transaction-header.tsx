@@ -13,7 +13,7 @@ interface TransactionHeaderProps {
 
 export function TransactionHeader({
   transactions,
-  customers,
+
   loading,
   onExport,
 }: TransactionHeaderProps) {

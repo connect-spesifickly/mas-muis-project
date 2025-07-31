@@ -16,10 +16,9 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({
-  transactions,
   customerList,
   displayTransactions,
-  loading,
+
   showRunningBalance,
   onAdd,
   onUpdate,

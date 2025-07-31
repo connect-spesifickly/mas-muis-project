@@ -1,9 +1,19 @@
-import { Transaction } from "@/types/transaction";
+import {
+  Transaction,
+  CreateTransactionData,
+  UpdateTransactionData,
+} from "@/types/transaction";
+
+// Interface for customer data
+interface Customer {
+  id: string;
+  name: string;
+}
 
 // Function to get customer name by ID
 export const getCustomerNameById = (
   customerId: string | number | undefined,
-  customerList: { id: string; name: string }[]
+  customerList: Customer[]
 ) => {
   if (!customerId) return "-";
   const customer = customerList.find((c) => c.id === customerId);
@@ -13,7 +23,7 @@ export const getCustomerNameById = (
 // Function to format transaction data for display
 export const formatTransactionForDisplay = (
   transaction: Transaction,
-  customerList: { id: string; name: string }[]
+  customerList: Customer[]
 ) => {
   return {
     ...transaction,
@@ -29,8 +39,8 @@ export const formatTransactionForDisplay = (
 // Function to handle transaction creation
 export const handleCreateTransaction = async (
   data: Partial<Transaction>,
-  customerList: { id: string; name: string }[],
-  createTransaction: (data: any) => Promise<void>
+  customerList: Customer[],
+  createTransaction: (data: CreateTransactionData) => Promise<void>
 ) => {
   try {
     // Convert customer name to customerId if customerId is a name
@@ -86,15 +96,15 @@ export const handleCreateTransaction = async (
     console.log("Sending transaction data:", transactionData);
 
     // Clean up data to only send required fields to backend
-    const cleanData = {
+    const cleanData: CreateTransactionData = {
       description: transactionData.description!,
       amount: transactionData.amount!,
       type: transactionData.type!,
       customerId: transactionData.customerId,
       transactionDate:
         transactionData.transactionDate instanceof Date
-          ? transactionData.transactionDate.toISOString()
-          : transactionData.transactionDate,
+          ? transactionData.transactionDate
+          : new Date(transactionData.transactionDate),
     };
 
     await createTransaction(cleanData);
@@ -108,8 +118,11 @@ export const handleCreateTransaction = async (
 export const handleUpdateTransaction = async (
   id: string,
   data: Partial<Transaction>,
-  customerList: { id: string; name: string }[],
-  updateTransaction: (id: string, data: any) => Promise<void>
+  customerList: Customer[],
+  updateTransaction: (
+    id: string,
+    data: Partial<UpdateTransactionData>
+  ) => Promise<void>
 ) => {
   try {
     // Convert customer name to customerId if customerId is a name
@@ -153,12 +166,14 @@ export const handleUpdateTransaction = async (
     console.log("Updating transaction data:", transactionData);
 
     // Clean up data to only send required fields to backend
-    const cleanData = {
+    const cleanData: Partial<UpdateTransactionData> = {
       ...transactionData,
       transactionDate:
         transactionData.transactionDate instanceof Date
-          ? transactionData.transactionDate.toISOString()
-          : transactionData.transactionDate,
+          ? transactionData.transactionDate
+          : transactionData.transactionDate
+            ? new Date(transactionData.transactionDate)
+            : undefined,
     };
 
     console.log("Clean update data:", cleanData);
