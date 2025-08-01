@@ -106,7 +106,7 @@ model Device {
 
 model Item {
   id            String    @id @default(cuid())
-  name          String    @unique
+  name          String   
     description   String?
   quantity      Int       @default(0)
   purchasePrice Decimal
