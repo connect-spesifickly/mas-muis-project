@@ -18,8 +18,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               };
             };
           }>("/auth/login", credentials);
-          // Return an object that matches the expected User shape
 
+          // Return an object that matches the expected User shape
           const user = {
             data: {
               tokens: {
@@ -50,16 +50,23 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.id = user.data.id;
         token.role = user.data.role;
       } else if (token.accessToken || trigger === "update") {
-        const newToken = await api.post<{
-          data: {
-            accessToken: string;
-            refreshToken?: string;
-          };
-        }>("/auth/refresh-token", {
-          refreshToken: token.refreshToken,
-        });
-        token.accessToken = newToken.data.data.accessToken;
-        token.refreshToken = newToken.data.data.refreshToken;
+        try {
+          const newToken = await api.post<{
+            data: {
+              accessToken: string;
+              refreshToken?: string;
+            };
+          }>("/auth/refresh-token", {
+            refreshToken: token.refreshToken,
+          });
+          token.accessToken = newToken.data.data.accessToken;
+          token.refreshToken = newToken.data.data.refreshToken;
+        } catch (error) {
+          console.error("Token refresh failed:", error);
+          // Clear tokens if refresh fails
+          delete token.accessToken;
+          delete token.refreshToken;
+        }
       }
       return token;
     },

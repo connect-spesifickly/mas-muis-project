@@ -25,14 +25,12 @@ export interface Stock {
 }
 
 export interface AssetListResponse {
-  data: Asset[];
-  total: number;
+  assets: Asset[];
   totalValue: number;
 }
 
 export interface StockListResponse {
-  data: Stock[];
-  total: number;
+  stocks: Stock[];
   totalValue: number;
 }
 

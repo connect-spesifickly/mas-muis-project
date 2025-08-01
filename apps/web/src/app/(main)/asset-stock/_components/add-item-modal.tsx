@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -28,8 +34,6 @@ export function AddItemModal({
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!isOpen || !type) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -48,7 +52,7 @@ export function AddItemModal({
     setIsLoading(true);
     try {
       await onAdd(data);
-      // Modal will be closed by the parent component after successful creation
+      handleClose();
     } catch (error) {
       console.error("Error adding item:", error);
     } finally {
@@ -67,11 +71,13 @@ export function AddItemModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <h3 className="text-lg font-semibold mb-4">
-          Tambah {type === "ASSET" ? "Aset" : "Stok"} Baru
-        </h3>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            Tambah {type === "ASSET" ? "Aset" : "Stok"} Baru
+          </DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -148,7 +154,7 @@ export function AddItemModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

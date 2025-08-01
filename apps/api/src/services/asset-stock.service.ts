@@ -9,26 +9,21 @@ class AssetStockService {
 
   /**
    * Perbaikan #1: Metode Generik untuk Mengambil Item (Menghilangkan Duplikasi)
-   * Perbaikan #2: Kalkulasi totalValue menggunakan Raw Query di DB (Lebih Efisien)
+   * Perbaikan #2: Menggunakan Prisma query biasa untuk menghindari masalah enum di raw query
    */
   private async _getItems(type: ItemType) {
     const whereClause = { type, deletedAt: null };
 
-    // Jalankan query untuk mengambil daftar item dan menghitung total nilai secara paralel
-    const [items, totalValueResult] = await Promise.all([
-      prisma.item.findMany({
-        where: whereClause,
-        orderBy: { createdAt: "desc" },
-      }),
-      // Menggunakan query mentah karena jauh lebih efisien untuk SUM(kolom_a * kolom_b)
-      prisma.$queryRaw<[{ totalvalue: bigint }]>`
-        SELECT SUM(quantity * "purchasePrice") as totalValue FROM "Item"
-        WHERE type = ${type} AND "deletedAt" IS NULL
-      `,
-    ]);
+    // Jalankan query untuk mengambil daftar item
+    const items = await prisma.item.findMany({
+      where: whereClause,
+      orderBy: { createdAt: "desc" },
+    });
 
-    // Konversi hasil dari bigint ke number, tangani jika hasilnya null (tidak ada item)
-    const totalValue = Number(totalValueResult[0]?.totalvalue ?? 0);
+    // Hitung total nilai dari items
+    const totalValue = items.reduce((sum, item) => {
+      return sum + Number(item.quantity) * Number(item.purchasePrice);
+    }, 0);
 
     return { items, totalValue };
   }
