@@ -4,6 +4,7 @@ export const reportApi = {
   // Financial Report APIs
   getMonthlySummary: async (month: number, year: number, token?: string) => {
     console.log("API call: getMonthlySummary", { month, year });
+    console.log("ini token di getMontSummart,", token);
     const response = await api.get(`/reports/monthly-summary`, {
       params: { month, year },
       headers: {

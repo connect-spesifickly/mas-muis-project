@@ -45,6 +45,43 @@ const extractData = <T>(response: unknown): T => {
   return response as T;
 };
 
+// Helper function to extract error message
+// const extractErrorMessage = (error: unknown): string | null => {
+//   if (!error) return null;
+
+//   if (typeof error === "string") {
+//     return error;
+//   }
+
+//   if (error && typeof error === "object") {
+//     // Handle SWR error object
+//     if ("message" in error && typeof error.message === "string") {
+//       return error.message;
+//     }
+
+//     // Handle axios error
+//     if (
+//       "response" in error &&
+//       error.response &&
+//       typeof error.response === "object"
+//     ) {
+//       const response = error.response as any;
+//       if (
+//         response.data &&
+//         typeof response.data === "object" &&
+//         "message" in response.data
+//       ) {
+//         return response.data.message;
+//       }
+//     }
+
+//     // Fallback
+//     return "An error occurred while fetching data";
+//   }
+
+//   return "An unknown error occurred";
+// };
+
 // Hook untuk Financial Report
 export function useFinancialReportData(month: number, year: number) {
   const { data: session, status } = useSession();
@@ -52,7 +89,9 @@ export function useFinancialReportData(month: number, year: number) {
 
   const { data: monthlySummaryResponse, error: monthlySummaryError } = useSWR(
     status === "authenticated" ? `monthly-summary-${month}-${year}` : null,
-    () => reportApi.getMonthlySummary(month, year, token)
+    status === "authenticated"
+      ? () => reportApi.getMonthlySummary(month, year, token)
+      : null
   );
 
   const { data: cashPositionResponse, error: cashPositionError } = useSWR(
