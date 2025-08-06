@@ -10,14 +10,19 @@ import {
   CompanyValuationCard,
   MonthlyCashChart,
   YearlyValuationChart,
-  FinancialReportLoading,
   FinancialReportFooter,
+  YearFilter,
 } from "./_components";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingUp, BarChart3, RefreshCw, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function FinancialReportPage() {
   const { data: session, status } = useSession();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [valuationYear, setValuationYear] = useState(new Date().getFullYear());
 
   const {
     monthlySummary,
@@ -26,19 +31,41 @@ export default function FinancialReportPage() {
     yearlyGraphData,
     monthlyOmset,
     error,
-  } = useFinancialReportData(selectedMonth, selectedYear);
+  } = useFinancialReportData(selectedMonth, selectedYear, valuationYear);
 
   // Check if user is authenticated
   if (status === "loading") {
-    return <FinancialReportLoading />;
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600">
-            Anda harus login untuk mengakses halaman ini
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="mb-4">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Akses Terbatas
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Anda harus login untuk mengakses halaman laporan keuangan.
           </p>
         </div>
       </div>
@@ -48,7 +75,7 @@ export default function FinancialReportPage() {
   // Check if user has OWNER role
   if (session?.role !== "OWNER") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600">Akses Ditolak</p>
           <p className="text-sm text-gray-500 mt-2">
@@ -62,122 +89,239 @@ export default function FinancialReportPage() {
     );
   }
 
+  // Show error if API is not available
+  if (error) {
+    return (
+      <div className="w-full h-full relative">
+        <div className="sticky top-16 z-40 bg-background border-b">
+          <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+            <div className="flex items-center justify-between flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+                Laporan Keuangan
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col w-full">
+          <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+            <div className="border rounded-lg p-6 bg-red-50 border-red-200">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Terjadi Kesalahan
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>
+                      Gagal memuat data laporan keuangan. Silakan coba lagi atau
+                      hubungi administrator.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        onClick={() => window.location.reload()}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Coba Lagi
+                      </Button>
+                      <Button
+                        onClick={() => (window.location.href = "/login")}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Login Ulang
+                      </Button>
+                    </div>
+                    {process.env.NODE_ENV === "development" && (
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-xs font-medium">
+                          Debug Info
+                        </summary>
+                        <div className="mt-2 text-xs bg-gray-100 p-3 rounded space-y-2">
+                          <div>
+                            <strong>Error Message:</strong> {error.message}
+                          </div>
+                          {error.details && (
+                            <div>
+                              <strong>Error Details:</strong>
+                              <pre className="mt-1 bg-white p-2 rounded text-xs overflow-auto">
+                                {JSON.stringify(error.details, null, 2)}
+                              </pre>
+                            </div>
+                          )}
+                          <div>
+                            <strong>Session Info:</strong>
+                            <div>Role: {session?.role}</div>
+                            <div>
+                              Token Available:{" "}
+                              {session?.accessToken ? "Yes" : "No"}
+                            </div>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              LAPORAN KAS & VALUASI
+    <div className="w-full h-full relative">
+      <div className="sticky top-16 z-40 bg-background border-b">
+        <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+          <div className="flex items-center justify-between flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+              Laporan Keuangan
             </h1>
-            <p className="text-lg text-gray-600">
-              Analisis Keuangan Perusahaan
-            </p>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                {selectedMonth}/{selectedYear}
+              </Badge>
+            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Filter Section */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <MonthYearFilter
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              onMonthChange={setSelectedMonth}
-              onYearChange={setSelectedYear}
-            />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800">
-                ⚠️ Data tidak dapat dimuat. Menampilkan data kosong.
-              </p>
-              <p className="text-sm text-yellow-600 mt-1">
-                Error: {error.message}
-              </p>
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          {/* Debug Info in Development */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                Debug Info
+              </h3>
+              <div className="text-xs text-yellow-700 space-y-1">
+                <p>Status: {status}</p>
+                <p>Role: {session?.role || "Not set"}</p>
+                <p>
+                  Token: {session?.accessToken ? "Available" : "Not available"}
+                </p>
+                <p>Selected Month: {selectedMonth}</p>
+                <p>Selected Year: {selectedYear}</p>
+                <p>Valuation Year: {valuationYear}</p>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Main Content - Two Column Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* LEFT COLUMN - LAPORAN KAS & RINGKASAN BULANAN */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
-                  LAPORAN KAS & RINGKASAN BULANAN
-                </h2>
-              </div>
-              <div className="p-6 space-y-6">
-                {/* Cash Position */}
-                <CashPositionCard cashPosition={cashPosition} />
+          {/* Main Content - Two Column Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* LEFT COLUMN - POSISI KAS & RINCIAN BULANAN */}
+            <div className="space-y-6">
+              {/* Month Year Filter untuk Posisi Kas & Rincian Bulanan */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Filter Periode</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Pilih bulan dan tahun untuk Posisi Kas & Rincian Bulanan
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <MonthYearFilter
+                    selectedMonth={selectedMonth}
+                    selectedYear={selectedYear}
+                    onMonthChange={setSelectedMonth}
+                    onYearChange={setSelectedYear}
+                  />
+                </CardContent>
+              </Card>
 
-                {/* Monthly Summary */}
-                <MonthlySummaryCard monthlySummary={monthlySummary} />
-              </div>
+              {/* Posisi Kas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Posisi Kas</CardTitle>
+                  <p className="text-sm text-muted-foreground">Saldo Kas</p>
+                </CardHeader>
+                <CardContent>
+                  <CashPositionCard cashPosition={cashPosition} />
+                </CardContent>
+              </Card>
+
+              {/* Detail Rincian Bulanan */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    Detail Rincian Bulanan
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Omset, Pengeluaran, HPP, dan Laba Bersih
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <MonthlySummaryCard monthlySummary={monthlySummary} />
+                </CardContent>
+              </Card>
+
+              {/* Monthly Cash Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                    Grafik Omset Bulanan
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Tren omset per bulan tahun {selectedYear}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <MonthlyCashChart
+                    monthlyOmset={monthlyOmset}
+                    selectedYear={selectedYear}
+                  />
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Monthly Cash Chart */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <MonthlyCashChart
-                monthlyOmset={monthlyOmset}
-                selectedYear={selectedYear}
+            {/* RIGHT COLUMN - VALUASI PERUSAHAAN */}
+            <div className="space-y-6">
+              {/* Year Filter untuk Valuasi Perusahaan */}
+              <YearFilter
+                selectedYear={valuationYear}
+                onYearChange={setValuationYear}
+                title="Filter Tahun Valuasi"
               />
+
+              {/* Company Valuation */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Valuasi Perusahaan</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Total Kas, Aset, Stok, dan Valuasi per Tahun {valuationYear}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <CompanyValuationCard companyValuation={companyValuation} />
+                </CardContent>
+              </Card>
+
+              {/* Yearly Valuation Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    Grafik Valuasi Tahunan
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Tren valuasi perusahaan dari tahun ke tahun
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <YearlyValuationChart yearlyGraphData={yearlyGraphData} />
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          {/* RIGHT COLUMN - VALUASI PERUSAHAAN */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                    />
-                  </svg>
-                  VALUASI PERUSAHAAN
-                </h2>
-                <p className="text-green-100 text-sm mt-1">
-                  Data per Tahun {selectedYear}
-                </p>
-              </div>
-              <div className="p-6">
-                <CompanyValuationCard companyValuation={companyValuation} />
-              </div>
-            </div>
-
-            {/* Yearly Valuation Chart */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <YearlyValuationChart yearlyGraphData={yearlyGraphData} />
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12">
+          {/* Footer */}
           <FinancialReportFooter />
         </div>
       </div>

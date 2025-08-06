@@ -6,3 +6,4 @@ export { MonthlyCashChart } from "./monthly-cash-chart";
 export { YearlyValuationChart } from "./yearly-valuation-chart";
 export { FinancialReportLoading } from "./financial-report-loading";
 export { FinancialReportFooter } from "./financial-report-footer";
+export { YearFilter } from "./year-filter";

@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
   Bar,
@@ -57,48 +56,35 @@ export function YearlyValuationChart({
   }));
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold text-gray-800">
-          Grafik Valuasi Tahunan
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="year"
-                stroke="#6b7280"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#6b7280"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => {
-                  if (value >= 1000000) {
-                    return `${(value / 1000000).toFixed(0)}M`;
-                  } else if (value >= 1000) {
-                    return `${(value / 1000).toFixed(0)}K`;
-                  }
-                  return value.toString();
-                }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar
-                dataKey="totalValuasi"
-                fill="#10b981"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-[300px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis
+            dataKey="year"
+            stroke="#6b7280"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="#6b7280"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => {
+              if (value >= 1000000) {
+                return `${(value / 1000000).toFixed(0)}M`;
+              } else if (value >= 1000) {
+                return `${(value / 1000).toFixed(0)}K`;
+              }
+              return value.toString();
+            }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Bar dataKey="totalValuasi" fill="#10b981" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

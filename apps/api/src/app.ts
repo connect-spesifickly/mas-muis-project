@@ -76,6 +76,15 @@ export default class App {
           return;
         }
 
+        // Log error for debugging
+        console.error("Error occurred:", {
+          message: err.message,
+          stack: err.stack,
+          url: req.url,
+          method: req.method,
+          timestamp: new Date().toISOString(),
+        });
+
         if (err instanceof ResponseError) {
           res.status(err.code || 500).json({
             success: false,
@@ -92,20 +101,48 @@ export default class App {
             },
           });
         } else if (err instanceof jwt.TokenExpiredError) {
-          res.status(400).json({
+          res.status(401).json({
             success: false,
             error: {
-              message: "jwt is expired",
+              message: "Token expired, please login again",
+            },
+          });
+        } else if (err instanceof jwt.JsonWebTokenError) {
+          res.status(401).json({
+            success: false,
+            error: {
+              message: "Invalid token",
             },
           });
         } else {
-          res.status(500).json({
-            success: false,
-            error: {
-              message: "Something went wrong, please try again later",
-              originalMessage: err.message,
-            },
-          });
+          // Handle Prisma errors
+          const errorMessage = err.message;
+          if (
+            errorMessage.includes("Database") ||
+            errorMessage.includes("Prisma")
+          ) {
+            res.status(503).json({
+              success: false,
+              error: {
+                message: "Database connection error, please try again later",
+                originalMessage:
+                  process.env.NODE_ENV === "development"
+                    ? errorMessage
+                    : undefined,
+              },
+            });
+          } else {
+            res.status(500).json({
+              success: false,
+              error: {
+                message: "Something went wrong, please try again later",
+                originalMessage:
+                  process.env.NODE_ENV === "development"
+                    ? errorMessage
+                    : undefined,
+              },
+            });
+          }
         }
       }
     );

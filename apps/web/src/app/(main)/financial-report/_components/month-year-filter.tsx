@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface MonthYearFilterProps {
   selectedMonth: number;
@@ -81,9 +82,9 @@ export function MonthYearFilter({
         </SelectContent>
       </Select>
 
-      <div className="text-sm text-muted-foreground">
+      <Badge variant="outline" className="text-sm">
         {months.find((m) => m.value === selectedMonth)?.label} {selectedYear}
-      </div>
+      </Badge>
     </div>
   );
 }
