@@ -221,9 +221,6 @@ export default function FinancialReportPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Filter Periode</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Pilih bulan dan tahun untuk Posisi Kas & Rincian Bulanan
-                  </p>
                 </CardHeader>
                 <CardContent>
                   <MonthYearFilter
@@ -235,31 +232,34 @@ export default function FinancialReportPage() {
                 </CardContent>
               </Card>
 
-              {/* Posisi Kas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Posisi Kas</CardTitle>
-                  <p className="text-sm text-muted-foreground">Saldo Kas</p>
-                </CardHeader>
-                <CardContent>
-                  <CashPositionCard cashPosition={cashPosition} />
-                </CardContent>
-              </Card>
+              {/* Posisi Kas & Detail Rincian - Side by Side with Equal Height */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Posisi Kas */}
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Posisi Kas</CardTitle>
+                    <p className="text-xs text-muted-foreground">Saldo Kas</p>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CashPositionCard cashPosition={cashPosition} />
+                  </CardContent>
+                </Card>
 
-              {/* Detail Rincian Bulanan */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Detail Rincian Bulanan
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Omset, Pengeluaran, HPP, dan Laba Bersih
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <MonthlySummaryCard monthlySummary={monthlySummary} />
-                </CardContent>
-              </Card>
+                {/* Detail Rincian Bulanan */}
+                <Card className="h-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">
+                      Detail Rincian Bulanan
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Omset, Pengeluaran, HPP, dan Laba Bersih
+                    </p>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <MonthlySummaryCard monthlySummary={monthlySummary} />
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Monthly Cash Chart */}
               <Card>
