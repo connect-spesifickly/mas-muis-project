@@ -28,6 +28,7 @@ export function SidebarPage({ activePage }: SidebarProps) {
     { id: "sale", label: "Sale", icon: "shopping-cart" },
     { id: "product", label: "Product", icon: "box" },
     { id: "customer", label: "Customer", icon: "users" },
+    { id: "patient-queue", label: "Antrian Pasien", icon: "users" },
     { id: "transaction", label: "Transaction", icon: "credit-card" },
     { id: "financial-report", label: "Financial Report", icon: "trending-up" },
     { id: "asset-stock", label: "Asset & Stock", icon: "package" },

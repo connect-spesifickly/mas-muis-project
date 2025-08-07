@@ -1,0 +1,345 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { PlusCircle, Loader2, CalendarIcon } from "lucide-react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { format } from "date-fns";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { createService, getCustomers } from "../actions";
+import { toast } from "@/components/ui/use-toast";
+
+const deviceSchema = yup.object().shape({
+  deviceType: yup.string().required("Jenis perangkat harus diisi."),
+  problemDescription: yup.string().required("Keluhan harus diisi."),
+  accessoriesLeft: yup.string().optional(),
+});
+
+const formSchema = yup.object().shape({
+  date: yup.date().required(),
+  customerId: yup.string().required("Pilih pelanggan."),
+  devices: yup
+    .array()
+    .of(deviceSchema)
+    .min(1, "Setidaknya satu perangkat harus ditambahkan."),
+});
+
+type FormData = yup.InferType<typeof formSchema>;
+
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+export function AddPatientDialog({
+  onServiceAdded,
+}: {
+  onServiceAdded: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(true);
+
+  const form = useForm<FormData>({
+    resolver: yupResolver(formSchema),
+    defaultValues: {
+      date: new Date(),
+      customerId: "",
+      devices: [
+        { deviceType: "", problemDescription: "", accessoriesLeft: "" },
+      ],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "devices",
+  });
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      const result = await getCustomers();
+      if (result.success && result.customers) {
+        setCustomers(result.customers);
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Gagal memuat daftar pelanggan.",
+          variant: "destructive",
+        });
+      }
+      setLoadingCustomers(false);
+    };
+    fetchCustomers();
+  }, []);
+
+  const selectedCustomer = form.watch("customerId");
+
+  const onSubmit = async (data: FormData) => {
+    const result = await createService({
+      customerId: data.customerId,
+      devices: data.devices,
+    });
+
+    if (result.success) {
+      toast({
+        title: "Sukses!",
+        description: "Antrian pasien berhasil ditambahkan.",
+      });
+      form.reset({
+        date: new Date(),
+        customerId: "",
+        devices: [
+          { deviceType: "", problemDescription: "", accessoriesLeft: "" },
+        ],
+      });
+      setOpen(false);
+      onServiceAdded();
+    } else {
+      toast({
+        title: "Error",
+        description: result.message || "Gagal menambahkan antrian pasien.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="ml-auto">
+          <PlusCircle className="mr-2 h-4 w-4" /> Tambah Pasien
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Tambah Antrian Pasien Baru</DialogTitle>
+          <DialogDescription>
+            Masukkan detail pelanggan dan perangkat yang akan diservis.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="grid gap-4 py-4"
+        >
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="date" className="text-right">
+              Tanggal
+            </Label>
+            <Controller
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal col-span-3",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pilih tanggal</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="customerId" className="text-right">
+              Nama Customer
+            </Label>
+            <Controller
+              control={form.control}
+              name="customerId"
+              render={({ field }) => (
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={loadingCustomers}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Pilih customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loadingCustomers ? (
+                      <SelectItem value="loading" disabled>
+                        <Loader2 className="animate-spin mr-2 h-4 w-4 inline-block" />{" "}
+                        Memuat...
+                      </SelectItem>
+                    ) : customers.length === 0 ? (
+                      <SelectItem value="no-customers" disabled>
+                        Tidak ada customer tersedia
+                      </SelectItem>
+                    ) : (
+                      customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="customerPhone" className="text-right">
+              No. HP
+            </Label>
+            <Input
+              id="customerPhone"
+              value={
+                selectedCustomer
+                  ? customers.find((c) => c.id === selectedCustomer)?.phone ||
+                    ""
+                  : ""
+              }
+              readOnly
+              className="col-span-3"
+            />
+          </div>
+
+          <div className="space-y-4 pt-4 border-t mt-4">
+            <h3 className="text-lg font-semibold">
+              Perangkat ({fields.length})
+            </h3>
+            {fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md relative"
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => remove(index)}
+                  className="absolute top-2 right-2 text-destructive"
+                  disabled={fields.length === 1}
+                >
+                  X
+                </Button>
+                <div>
+                  <Label htmlFor={`devices.${index}.deviceType`}>
+                    Jenis Perangkat
+                  </Label>
+                  <Input
+                    id={`devices.${index}.deviceType`}
+                    {...form.register(`devices.${index}.deviceType`)}
+                    placeholder="Contoh: Laptop, HP, Tablet"
+                    className="mt-1"
+                  />
+                  {form.formState.errors.devices?.[index]?.deviceType && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {
+                        form.formState.errors.devices[index]?.deviceType
+                          ?.message
+                      }
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor={`devices.${index}.problemDescription`}>
+                    Keluhan
+                  </Label>
+                  <Textarea
+                    id={`devices.${index}.problemDescription`}
+                    {...form.register(`devices.${index}.problemDescription`)}
+                    placeholder="Jelaskan keluhan perangkat"
+                    className="mt-1"
+                  />
+                  {form.formState.errors.devices?.[index]
+                    ?.problemDescription && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {
+                        form.formState.errors.devices[index]?.problemDescription
+                          ?.message
+                      }
+                    </p>
+                  )}
+                </div>
+                <div className="col-span-full">
+                  <Label htmlFor={`devices.${index}.accessoriesLeft`}>
+                    Yang Ditinggalkan (Aksesoris)
+                  </Label>
+                  <Input
+                    id={`devices.${index}.accessoriesLeft`}
+                    {...form.register(`devices.${index}.accessoriesLeft`)}
+                    placeholder="Contoh: Charger ori, Tas"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                append({
+                  deviceType: "",
+                  problemDescription: "",
+                  accessoriesLeft: "",
+                })
+              }
+              className="w-full"
+            >
+              Tambah Perangkat Lain
+            </Button>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Simpan Antrian
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
