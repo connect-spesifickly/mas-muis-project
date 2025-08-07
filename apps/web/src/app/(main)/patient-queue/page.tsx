@@ -10,24 +10,40 @@ import {
 } from "@/components/ui/card";
 import { AddPatientDialog } from "./_components/AddPatientDialog";
 import { ServiceQueueTable } from "./_components/ServiceQueueTable";
-import { getServices } from "./actions";
+import { useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PatientQueuePage() {
+  const { data: session } = useSession();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
-    const result = await getServices();
-    if (result.success && result.data) {
-      setServices(result.data);
-    } else {
-      toast.error(result.message || "Gagal memuat antrian pasien.");
+    if (!session?.accessToken) return;
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        }
+      );
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.data)) {
+        setServices(data.data);
+      } else {
+        setServices([]);
+        toast.error(data.message || "Gagal memuat antrian pasien.");
+      }
+    } catch (error) {
+      toast.error("Gagal memuat antrian pasien.");
     }
     setLoading(false);
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     fetchServices();

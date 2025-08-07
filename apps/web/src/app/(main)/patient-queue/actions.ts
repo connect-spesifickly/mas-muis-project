@@ -1,6 +1,8 @@
 "use server";
 
 import { ServiceStatus } from "@/types/service";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export interface DeviceInput {
   deviceType: string;
@@ -15,11 +17,16 @@ export interface CreateServiceData {
 
 // Fetch customers for dropdown
 export async function getCustomers() {
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/customers`,
       {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         cache: "no-store",
       }
     );
@@ -38,11 +45,16 @@ export async function getCustomers() {
 
 // List services (patient queue)
 export async function getServices(page = 1, pageSize = 10) {
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services?page=${page}&pageSize=${pageSize}`,
       {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         cache: "no-store",
       }
     );

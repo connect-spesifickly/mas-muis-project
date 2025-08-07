@@ -115,7 +115,7 @@ export function ServiceQueueTable({
               </TableCell>
             </TableRow>
           ) : (
-            services.map((service) => (
+            (services || []).map((service) => (
               <TableRow key={service.id}>
                 <TableCell className="font-medium">
                   {format(new Date(service.createdAt), "dd MMM yyyy")}

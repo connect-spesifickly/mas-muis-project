@@ -6,6 +6,7 @@ import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { format } from "date-fns";
+import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +60,7 @@ export function AddPatientDialog({
 }: {
   onServiceAdded: () => void;
 }) {
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
@@ -80,17 +82,32 @@ export function AddPatientDialog({
   });
 
   useEffect(() => {
-    const fetchCustomers = async () => {
-      const result = await getCustomers();
-      if (result.success && result.customers) {
-        setCustomers(result.customers);
-      } else {
-        toast.error(result.message || "Gagal memuat daftar pelanggan.");
+    async function fetchCustomers() {
+      if (!session?.accessToken) return;
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/customers`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.data)) {
+          setCustomers(data.data);
+        } else {
+          setCustomers([]);
+          toast.error(data.message || "Gagal memuat daftar pelanggan.");
+        }
+      } catch (error) {
+        toast.error("Gagal memuat daftar pelanggan.");
       }
       setLoadingCustomers(false);
-    };
+    }
     fetchCustomers();
-  }, []);
+  }, [session]);
 
   const selectedCustomer = form.watch("customerId");
 
@@ -154,7 +171,13 @@ export function AddPatientDialog({
               name="customerId"
               render={({ field }) => (
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(val) => {
+                    if (val === "add-new") {
+                      window.open("/customer", "_blank");
+                    } else {
+                      field.onChange(val);
+                    }
+                  }}
                   value={field.value}
                   disabled={loadingCustomers}
                 >
@@ -172,11 +195,19 @@ export function AddPatientDialog({
                         Tidak ada customer tersedia
                       </SelectItem>
                     ) : (
-                      customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
+                      <>
+                        {(customers || []).map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem
+                          value="add-new"
+                          className="text-blue-600 font-semibold"
+                        >
+                          + Tambah customer baru...
                         </SelectItem>
-                      ))
+                      </>
                     )}
                   </SelectContent>
                 </Select>
