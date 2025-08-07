@@ -350,16 +350,34 @@ export default function DataCustomer() {
       // Create Excel workbook with single table
       const workbook = XLSX.utils.book_new();
 
-      // Create single table with all data
+      // Create single long table with all data
       const tableData = [
-        ["LAPORAN CUSTOMER", "", "", "", "", "", "", ""],
-        ["Nama", customerData.name, "", "", "", "", "", ""],
-        ["No. HP", customerData.phone, "", "", "", "", "", ""],
-        ["Alamat", customerData.address || "-", "", "", "", "", "", ""],
-        ["Keterangan", customerData.notes || "-", "", "", "", "", "", ""],
-        ["", "", "", "", "", "", "", ""],
-        ["RIWAYAT SERVICE", "", "", "", "", "", "", ""],
-        ["Tanggal", "Device", "Keadaan", "Status", "Selesai", "", "", ""],
+        [
+          "Nama",
+          "No. HP",
+          "Alamat",
+          "Ket.",
+          "Riwayat Service",
+          "",
+          "",
+          "",
+          "Riwayat Pembayaran",
+          "",
+          "",
+        ],
+        [
+          "",
+          "",
+          "",
+          "",
+          "Tgl.",
+          "Device",
+          "Keadaan",
+          "Status",
+          "Tgl.",
+          "Rincian",
+          "Penerimaan",
+        ],
       ];
 
       // Add services data
@@ -369,38 +387,23 @@ export default function DataCustomer() {
             const serviceDate = new Date(service.createdAt).toLocaleDateString(
               "id-ID"
             );
-            const completedDate = device.completedAt
-              ? new Date(device.completedAt).toLocaleDateString("id-ID")
-              : "-";
 
             tableData.push([
+              customerData.name,
+              customerData.phone,
+              customerData.address || "-",
+              customerData.notes || "-",
               serviceDate,
               device.deviceType,
               device.problemDescription,
               device.status,
-              completedDate,
               "",
               "",
               "",
             ]);
           });
         });
-      } else {
-        tableData.push([
-          "Tidak ada riwayat service",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-        ]);
       }
-
-      tableData.push(["", "", "", "", "", "", "", ""]);
-      tableData.push(["RIWAYAT PEMBAYARAN", "", "", "", "", "", "", ""]);
-      tableData.push(["Tanggal", "Rincian", "Penerimaan", "", "", "", "", ""]);
 
       // Add transactions data
       if (customerData.transactions && customerData.transactions.length > 0) {
@@ -414,27 +417,19 @@ export default function DataCustomer() {
           }).format(transaction.amount);
 
           tableData.push([
+            customerData.name,
+            customerData.phone,
+            customerData.address || "-",
+            customerData.notes || "-",
+            "",
+            "",
+            "",
+            "",
             transactionDate,
             transaction.description,
             amount,
-            "",
-            "",
-            "",
-            "",
-            "",
           ]);
         });
-      } else {
-        tableData.push([
-          "Tidak ada riwayat pembayaran",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-        ]);
       }
 
       // Create single sheet from table data
