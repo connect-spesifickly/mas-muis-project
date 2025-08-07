@@ -70,6 +70,7 @@ interface ExcelTableProps<
   onUpdate?: (id: string, data: Partial<T>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   customActions?: CustomAction[];
+  headerActions?: React.ReactNode;
   customCellRenderer?: (
     column: Column,
     value: unknown,
@@ -91,6 +92,7 @@ export default function ExcelTable<
   onUpdate,
   onDelete,
   customActions = [],
+  headerActions,
   customCellRenderer,
 }: ExcelTableProps<T>) {
   const [tableData, setTableData] = useState<T[]>(data);
@@ -464,6 +466,7 @@ export default function ExcelTable<
                 className="pl-8 w-64"
               />
             </div>
+            {headerActions}
             {onAdd && (
               <Button onClick={handleAddRow} size="sm" disabled={loading}>
                 <Plus className="h-4 w-4 mr-2" />

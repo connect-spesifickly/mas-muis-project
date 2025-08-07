@@ -11,49 +11,8 @@ import {
 } from "@/types/customer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, Download } from "lucide-react";
-
-function CustomerActions({
-  onSearch,
-  canMerge,
-}: {
-  onSearch: (searchTerm: string) => void;
-  canMerge: boolean;
-}) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useCallback(
-    debounce((term: unknown) => {
-      onSearch(term as string);
-    }, 300),
-    [onSearch]
-  );
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    debouncedSearch(value);
-  };
-  return (
-    <div className="flex flex-col sm:flex-row gap-4 items-center">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-[10px] h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Cari customer..."
-          value={searchTerm}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-      {canMerge && (
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          Gabung Customer
-        </Button>
-      )}
-    </div>
-  );
-}
+import { Users, Download } from "lucide-react";
 
 function CustomerPagination({
   currentPage,
@@ -95,18 +54,6 @@ function CustomerPagination({
       </Button>
     </div>
   );
-}
-
-// Simple debounce function
-function debounce<T extends (...args: unknown[]) => unknown>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
 }
 
 const CUSTOMER_COLUMNS = [
@@ -168,10 +115,6 @@ export default function DataCustomer() {
     }
   };
 
-  const handleSearch = (searchTerm: string) => {
-    setFilters((prev) => ({ ...prev, search: searchTerm, page: 1 }));
-  };
-
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
   };
@@ -181,6 +124,15 @@ export default function DataCustomer() {
 
   if (error)
     return <div className="p-6 text-red-500">Error: {error.message}</div>;
+
+  // Header actions for ExcelTable
+  const headerActions = (user?.role === "OWNER" ||
+    user?.role === "TECHNICIAN") && (
+    <Button variant="outline" size="sm" className="flex items-center gap-2">
+      <Users className="w-4 h-4" />
+      Gabung Customer
+    </Button>
+  );
 
   return (
     <div className="w-full h-full relative">
@@ -201,19 +153,6 @@ export default function DataCustomer() {
 
       <div className="flex flex-col w-full">
         <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
-          {/* Search and Actions Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Pencarian & Aksi</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CustomerActions
-                onSearch={handleSearch}
-                canMerge={user?.role === "OWNER" || user?.role === "TECHNICIAN"}
-              />
-            </CardContent>
-          </Card>
-
           {/* Customer Table */}
           <Card>
             <CardHeader>
@@ -231,6 +170,7 @@ export default function DataCustomer() {
                 onAdd={handleCreateCustomer}
                 onUpdate={handleUpdateCustomer}
                 onDelete={handleDeleteCustomer}
+                headerActions={headerActions}
                 customActions={[
                   {
                     label: "Download Report",
