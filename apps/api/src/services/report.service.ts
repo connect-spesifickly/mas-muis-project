@@ -229,11 +229,17 @@ class ReportService {
       const totalKas = calculateBalance(income, expense);
 
       const totalNilaiAset = asetItems.reduce(
-        (sum, i) => sum + Number(i.quantity) * Number(i.purchasePrice),
+        (sum, i) =>
+          i.createdAt.getFullYear() <= year
+            ? sum + Number(i.quantity) * Number(i.purchasePrice)
+            : sum,
         0
       );
       const totalNilaiStok = stokItems.reduce(
-        (sum, i) => sum + Number(i.quantity) * Number(i.purchasePrice),
+        (sum, i) =>
+          i.createdAt.getFullYear() <= year
+            ? sum + Number(i.quantity) * Number(i.purchasePrice)
+            : sum,
         0
       );
 
