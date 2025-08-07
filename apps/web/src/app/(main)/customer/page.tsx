@@ -9,9 +9,11 @@ import {
   CreateCustomerData,
   UpdateCustomerData,
 } from "@/types/customer";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Search, Users, Download } from "lucide-react";
 
 function CustomerActions({
   onSearch,
@@ -32,27 +34,24 @@ function CustomerActions({
     debouncedSearch(value);
   };
   return (
-    <Card className="shadow-md rounded-xl border-0 bg-gradient-to-r from-blue-50 to-white/80 mb-2">
-      <CardContent className="py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex gap-4 w-full md:w-auto">
-          <Input
-            type="text"
-            placeholder="Cari customer..."
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="min-w-[220px] rounded-lg border-gray-300 bg-white/80 focus:ring-2 focus:ring-blue-200 px-4 py-2 text-sm"
-          />
-        </div>
-        {canMerge && (
-          <Button
-            variant="outline"
-            className="rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all shadow-sm px-4 py-2"
-          >
-            Gabung Customer
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-[10px] h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Cari customer..."
+          value={searchTerm}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+      {canMerge && (
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          Gabung Customer
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -72,7 +71,7 @@ function CustomerPagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         variant="outline"
-        className="rounded-lg px-3 py-1"
+        size="sm"
       >
         Previous
       </Button>
@@ -81,7 +80,7 @@ function CustomerPagination({
           key={page}
           onClick={() => onPageChange(page)}
           variant={page === currentPage ? "default" : "outline"}
-          className={`rounded-lg px-3 py-1 ${page === currentPage ? "bg-blue-600 text-white" : ""}`}
+          size="sm"
         >
           {page}
         </Button>
@@ -90,7 +89,7 @@ function CustomerPagination({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         variant="outline"
-        className="rounded-lg px-3 py-1"
+        size="sm"
       >
         Next
       </Button>
@@ -139,6 +138,7 @@ export default function DataCustomer() {
     updateCustomer,
     downloadReport,
   } = useCustomers(filters);
+
   const handleCreateCustomer = async (data: Partial<Customer>) => {
     try {
       await createCustomer(data as CreateCustomerData);
@@ -146,6 +146,7 @@ export default function DataCustomer() {
       console.error("Failed to create customer:", error);
     }
   };
+
   const handleUpdateCustomer = async (id: string, data: Partial<Customer>) => {
     try {
       await updateCustomer(id, data as UpdateCustomerData);
@@ -153,9 +154,11 @@ export default function DataCustomer() {
       console.error("Failed to update customer:", error);
     }
   };
+
   const handleDeleteCustomer = async (id: string) => {
     console.log("Delete not implemented - consider merge instead", id);
   };
+
   const handleDownloadReport = async (customerId: string) => {
     try {
       const reportData = await downloadReport(customerId);
@@ -164,56 +167,96 @@ export default function DataCustomer() {
       console.error("Failed to download report:", error);
     }
   };
+
   const handleSearch = (searchTerm: string) => {
     setFilters((prev) => ({ ...prev, search: searchTerm, page: 1 }));
   };
+
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
   };
+
   if (isLoading && customers.length === 0)
     return <div className="p-6">Loading...</div>;
+
   if (error)
     return <div className="p-6 text-red-500">Error: {error.message}</div>;
+
   return (
-    <div className="p-0 md:p-4 max-w-7xl w-full mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold text-blue-700 mb-2 mt-2 md:mt-4">
-        Data Customer
-      </h1>
-      <p className="text-gray-500 mb-4 text-sm md:text-base">
-        Kelola data customer dengan mudah, pencarian cepat, dan tampilan nyaman.
-      </p>
-      <CustomerActions
-        onSearch={handleSearch}
-        canMerge={user?.role === "OWNER" || user?.role === "TECHNICIAN"}
-      />
-      <div className="my-4 border-t border-gray-200" />
-      <Card className="shadow-lg rounded-2xl border-0 bg-white/90 w-full">
-        <CardContent className="p-0 md:p-4">
-          <ExcelTable
-            title=""
-            data={customers}
-            columns={CUSTOMER_COLUMNS}
-            onAdd={handleCreateCustomer}
-            onUpdate={handleUpdateCustomer}
-            onDelete={handleDeleteCustomer}
-            customActions={[
-              {
-                label: "Download Report",
-                icon: "Download",
-                onClick: handleDownloadReport,
-                visible: user?.role === "OWNER",
-              },
-            ]}
-          />
-        </CardContent>
-      </Card>
-      {pagination.totalPages > 1 && (
-        <CustomerPagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          onPageChange={handlePageChange}
-        />
-      )}
+    <div className="w-full h-full relative">
+      <div className="sticky top-16 z-40 bg-background border-b">
+        <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+          <div className="flex items-center justify-between flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+              Data Customer
+            </h1>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                {customers.length} Customer
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          {/* Search and Actions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Pencarian & Aksi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CustomerActions
+                onSearch={handleSearch}
+                canMerge={user?.role === "OWNER" || user?.role === "TECHNICIAN"}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Customer Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Daftar Customer</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Kelola data customer dengan mudah, pencarian cepat, dan tampilan
+                nyaman
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ExcelTable
+                title=""
+                data={customers}
+                columns={CUSTOMER_COLUMNS}
+                onAdd={handleCreateCustomer}
+                onUpdate={handleUpdateCustomer}
+                onDelete={handleDeleteCustomer}
+                customActions={[
+                  {
+                    label: "Download Report",
+                    icon: "Download",
+                    onClick: handleDownloadReport,
+                    visible: user?.role === "OWNER",
+                  },
+                ]}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <Card>
+              <CardContent className="pt-6">
+                <CustomerPagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
