@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Users, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 function CustomerPagination({
   currentPage,
@@ -346,48 +347,118 @@ export default function DataCustomer() {
 
       const customerData: CustomerReportData = result.data;
 
-      // Create CSV content
-      let csvContent = "Customer Report\n\n";
-      csvContent += "Customer Information\n";
-      csvContent += `Name,${customerData.name}\n`;
-      csvContent += `Phone,${customerData.phone}\n`;
-      csvContent += `Address,${customerData.address || ""}\n`;
-      csvContent += `Notes,${customerData.notes || ""}\n\n`;
+      // Create Excel workbook with single table
+      const workbook = XLSX.utils.book_new();
+
+      // Create single table with all data
+      const tableData = [
+        ["LAPORAN CUSTOMER", "", "", "", "", "", "", ""],
+        ["Nama", customerData.name, "", "", "", "", "", ""],
+        ["No. HP", customerData.phone, "", "", "", "", "", ""],
+        ["Alamat", customerData.address || "-", "", "", "", "", "", ""],
+        ["Keterangan", customerData.notes || "-", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["RIWAYAT SERVICE", "", "", "", "", "", "", ""],
+        ["Tanggal", "Device", "Keadaan", "Status", "Selesai", "", "", ""],
+      ];
 
       // Add services data
       if (customerData.services && customerData.services.length > 0) {
-        csvContent += "Services\n";
-        csvContent +=
-          "Service ID,Created At,Device Type,Problem Description,Accessories Left,Status,Completed At\n";
         customerData.services.forEach((service) => {
           service.devices.forEach((device) => {
-            csvContent += `${service.id},${service.createdAt},${device.deviceType},${device.problemDescription},${device.accessoriesLeft},${device.status},${device.completedAt || ""}\n`;
+            const serviceDate = new Date(service.createdAt).toLocaleDateString(
+              "id-ID"
+            );
+            const completedDate = device.completedAt
+              ? new Date(device.completedAt).toLocaleDateString("id-ID")
+              : "-";
+
+            tableData.push([
+              serviceDate,
+              device.deviceType,
+              device.problemDescription,
+              device.status,
+              completedDate,
+              "",
+              "",
+              "",
+            ]);
           });
         });
-        csvContent += "\n";
+      } else {
+        tableData.push([
+          "Tidak ada riwayat service",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+        ]);
       }
+
+      tableData.push(["", "", "", "", "", "", "", ""]);
+      tableData.push(["RIWAYAT PEMBAYARAN", "", "", "", "", "", "", ""]);
+      tableData.push(["Tanggal", "Rincian", "Penerimaan", "", "", "", "", ""]);
 
       // Add transactions data
       if (customerData.transactions && customerData.transactions.length > 0) {
-        csvContent += "Transactions\n";
-        csvContent += "Transaction ID,Date,Description,Amount,Type\n";
         customerData.transactions.forEach((transaction) => {
-          csvContent += `${transaction.id},${transaction.transactionDate},${transaction.description},${transaction.amount},${transaction.type}\n`;
+          const transactionDate = new Date(
+            transaction.transactionDate
+          ).toLocaleDateString("id-ID");
+          const amount = new Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+          }).format(transaction.amount);
+
+          tableData.push([
+            transactionDate,
+            transaction.description,
+            amount,
+            "",
+            "",
+            "",
+            "",
+            "",
+          ]);
         });
+      } else {
+        tableData.push([
+          "Tidak ada riwayat pembayaran",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+        ]);
       }
 
-      // Create and download CSV file
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      // Create single sheet from table data
+      const sheet = XLSX.utils.aoa_to_sheet(tableData);
+      XLSX.utils.book_append_sheet(workbook, sheet, "Laporan Customer");
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `customer-report-${customerData.name}-${new Date().toISOString().split("T")[0]}.csv`;
+      link.download = `laporan-customer-${customerData.name}-${new Date().toISOString().split("T")[0]}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast.success("Laporan berhasil diunduh");
+      toast.success("Laporan Excel berhasil diunduh");
     } catch (error) {
       console.error("Failed to download report:", error);
       toast.error("Gagal mengunduh laporan");
