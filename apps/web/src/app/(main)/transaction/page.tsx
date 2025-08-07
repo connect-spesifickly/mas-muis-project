@@ -5,10 +5,12 @@ import { useSession } from "next-auth/react";
 import { useTransactions } from "@/hooks/use-transaction";
 import { useCustomers } from "@/hooks/use-customer";
 import { Transaction } from "@/types/transaction";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileSpreadsheet, Calendar, TrendingUp } from "lucide-react";
 
 // Import components
 import {
-  TransactionHeader,
   TransactionFilters,
   TransactionTable,
   handleExportExcel,
@@ -18,7 +20,7 @@ import {
 } from "./_components";
 
 export default function TransaksiKas() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [filters, setFilters] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
@@ -56,6 +58,17 @@ export default function TransaksiKas() {
     formatTransactionForDisplay(transaction, customerList)
   );
 
+  // Calculate summary data
+  const totalIncome = transactions
+    .filter((t) => t.type === "INCOME")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter((t) => t.type === "EXPENSE")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const netCash = totalIncome - totalExpense;
+
   // Debug: log transaction data for sorting
   console.log("Raw transactions:", transactions);
   console.log("Display transactions:", displayTransactions);
@@ -64,6 +77,115 @@ export default function TransaksiKas() {
     "First transaction transactionDate:",
     transactions[0]?.transactionDate
   );
+
+  // Check if user is authenticated
+  if (status === "loading") {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="mb-4">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Akses Terbatas
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Anda harus login untuk mengakses halaman transaksi kas.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if API is not available
+  if (error) {
+    return (
+      <div className="w-full h-full relative">
+        <div className="sticky top-16 z-40 bg-background border-b">
+          <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+            <div className="flex items-center justify-between flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+                Transaksi Kas
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col w-full">
+          <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+            <div className="border rounded-lg p-6 bg-red-50 border-red-200">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Terjadi Kesalahan
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>
+                      Gagal memuat data transaksi kas. Silakan coba lagi atau
+                      hubungi administrator.
+                    </p>
+                    {process.env.NODE_ENV === "development" && (
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-xs font-medium">
+                          Debug Info
+                        </summary>
+                        <div className="mt-2 text-xs bg-gray-100 p-3 rounded space-y-2">
+                          <div>
+                            <strong>Error Message:</strong> {error.message}
+                          </div>
+                          <div>
+                            <strong>Session Info:</strong>
+                            <div>Role: {session?.role}</div>
+                            <div>
+                              Token Available:{" "}
+                              {session?.accessToken ? "Yes" : "No"}
+                            </div>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Handler functions
   const handleFilterChange = (newFilters: typeof filters) => {
@@ -99,35 +221,160 @@ export default function TransaksiKas() {
   };
 
   if (isLoading) return <div className="p-6">Loading...</div>;
-  if (error)
-    return <div className="p-6 text-red-500">Error: {error.message}</div>;
 
   return (
-    <div className="p-0 md:p-4 max-w-7xl w-full mx-auto">
-      <TransactionHeader
-        transactions={transactions}
-        customers={customerList}
-        loading={isLoading}
-        onExport={handleExport}
-      />
+    <div className="w-full h-full relative">
+      <div className="sticky top-16 z-40 bg-background border-b">
+        <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+          <div className="flex items-center justify-between flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+              Transaksi Kas
+            </h1>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                {filters.month}/{filters.year}
+              </Badge>
+              <button
+                onClick={handleExport}
+                disabled={isLoading || !transactions?.length}
+                className="flex items-center gap-2 px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <TransactionFilters
-        filters={filters}
-        onFiltersChange={handleFilterChange}
-      />
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          {/* Debug Info in Development */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                Debug Info
+              </h3>
+              <div className="text-xs text-yellow-700 space-y-1">
+                <p>Status: {status}</p>
+                <p>Role: {session?.role || "Not set"}</p>
+                <p>
+                  Token: {session?.accessToken ? "Available" : "Not available"}
+                </p>
+                <p>Selected Month: {filters.month}</p>
+                <p>Selected Year: {filters.year}</p>
+                <p>Transactions Count: {transactions.length}</p>
+              </div>
+            </div>
+          )}
 
-      <div className="my-4 border-t border-gray-200" />
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                  Total Pemasukan
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Kas masuk bulan ini
+                </p>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-green-600">
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                  }).format(totalIncome)}
+                </div>
+              </CardContent>
+            </Card>
 
-      <TransactionTable
-        transactions={transactions}
-        customerList={customerList}
-        displayTransactions={displayTransactions}
-        loading={isLoading}
-        showRunningBalance={session?.role === "OWNER"}
-        onAdd={handleCreateTransaction}
-        onUpdate={handleUpdateTransaction}
-        onDelete={handleDeleteTransaction}
-      />
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-red-600 rotate-180" />
+                  Total Pengeluaran
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Kas keluar bulan ini
+                </p>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-red-600">
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                  }).format(totalExpense)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  Saldo Bersih
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Pemasukan - Pengeluaran
+                </p>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div
+                  className={`text-2xl font-bold ${netCash >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                  }).format(Math.abs(netCash))}
+                  <span className="text-sm ml-1">
+                    {netCash >= 0 ? "+" : "-"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filter Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Filter Periode</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TransactionFilters
+                filters={filters}
+                onFiltersChange={handleFilterChange}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Transaction Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Daftar Transaksi</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Kelola semua transaksi kas masuk dan keluar
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <TransactionTable
+                transactions={transactions}
+                customerList={customerList}
+                displayTransactions={displayTransactions}
+                loading={isLoading}
+                showRunningBalance={session?.role === "OWNER"}
+                onAdd={handleCreateTransaction}
+                onUpdate={handleUpdateTransaction}
+                onDelete={handleDeleteTransaction}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

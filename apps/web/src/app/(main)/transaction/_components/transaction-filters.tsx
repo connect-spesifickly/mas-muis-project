@@ -1,5 +1,7 @@
 "use client";
 
+import { Calendar } from "lucide-react";
+
 interface TransactionFiltersProps {
   filters: { month: number; year: number };
   onFiltersChange: (filters: { month: number; year: number }) => void;
@@ -9,40 +11,58 @@ export function TransactionFilters({
   filters,
   onFiltersChange,
 }: TransactionFiltersProps) {
+  const months = [
+    { value: 1, label: "Januari" },
+    { value: 2, label: "Februari" },
+    { value: 3, label: "Maret" },
+    { value: 4, label: "April" },
+    { value: 5, label: "Mei" },
+    { value: 6, label: "Juni" },
+    { value: 7, label: "Juli" },
+    { value: 8, label: "Agustus" },
+    { value: 9, label: "September" },
+    { value: 10, label: "Oktober" },
+    { value: 11, label: "November" },
+    { value: 12, label: "Desember" },
+  ];
+
+  const years = Array.from(
+    { length: 10 },
+    (_, i) => new Date().getFullYear() - i
+  );
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 p-4 border-b">
+    <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">
+          Periode:
+        </span>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-2">
         <select
           value={filters.month}
           onChange={(e) =>
             onFiltersChange({ ...filters, month: Number(e.target.value) })
           }
-          className="px-3 py-2 border rounded-md"
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
         >
-          <option value={1}>Januari</option>
-          <option value={2}>Februari</option>
-          <option value={3}>Maret</option>
-          <option value={4}>April</option>
-          <option value={5}>Mei</option>
-          <option value={6}>Juni</option>
-          <option value={7}>Juli</option>
-          <option value={8}>Agustus</option>
-          <option value={9}>September</option>
-          <option value={10}>Oktober</option>
-          <option value={11}>November</option>
-          <option value={12}>Desember</option>
+          {months.map((month) => (
+            <option key={month.value} value={month.value}>
+              {month.label}
+            </option>
+          ))}
         </select>
+
         <select
           value={filters.year}
           onChange={(e) =>
             onFiltersChange({ ...filters, year: Number(e.target.value) })
           }
-          className="px-3 py-2 border rounded-md"
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
         >
-          {Array.from(
-            { length: 10 },
-            (_, i) => new Date().getFullYear() - i
-          ).map((year) => (
+          {years.map((year) => (
             <option key={year} value={year}>
               {year}
             </option>

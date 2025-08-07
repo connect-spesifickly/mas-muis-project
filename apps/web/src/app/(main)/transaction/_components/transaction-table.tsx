@@ -2,7 +2,6 @@
 
 import ExcelTable from "@/components/excel-table";
 import { Transaction, TransactionType } from "@/types/transaction";
-import { Card, CardContent } from "@/components/ui/card";
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -129,20 +128,18 @@ export function TransactionTable({
   console.log("TransactionTable - showRunningBalance:", showRunningBalance);
 
   return (
-    <Card className="shadow-lg rounded-2xl border-0 bg-white/90 w-full">
-      <CardContent className="p-0 md:p-4">
-        <ExcelTable
-          title=""
-          data={displayTransactions}
-          columns={transactionColumns}
-          showRunningBalance={showRunningBalance}
-          showDuplicate={false}
-          onAdd={onAdd}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          customCellRenderer={customCellRenderer}
-        />
-      </CardContent>
-    </Card>
+    <div className="w-full">
+      <ExcelTable
+        title=""
+        data={displayTransactions}
+        columns={transactionColumns}
+        showRunningBalance={showRunningBalance}
+        showDuplicate={false}
+        onAdd={onAdd}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        customCellRenderer={customCellRenderer}
+      />
+    </div>
   );
 }
