@@ -1,18 +1,62 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
+import { useSession } from "next-auth/react";
 import ExcelTable from "@/components/excel-table";
 import { useCustomers } from "@/hooks/use-customer";
 import {
   Customer,
   CreateCustomerData,
   UpdateCustomerData,
+  MergeCustomerData,
 } from "@/types/customer";
+
+interface CustomerReportData {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  notes?: string;
+  services: Array<{
+    id: string;
+    createdAt: string;
+    devices: Array<{
+      deviceType: string;
+      problemDescription: string;
+      accessoriesLeft: string;
+      status: string;
+      completedAt?: string;
+    }>;
+  }>;
+  transactions: Array<{
+    id: string;
+    transactionDate: string;
+    description: string;
+    amount: number;
+    type: string;
+  }>;
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Download } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Users, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 function CustomerPagination({
   currentPage,
@@ -56,6 +100,164 @@ function CustomerPagination({
   );
 }
 
+function MergeCustomerModal({
+  isOpen,
+  onClose,
+  customers,
+  onMerge,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  customers: Customer[];
+  onMerge: (data: MergeCustomerData) => Promise<void>;
+}) {
+  const [primaryCustomerId, setPrimaryCustomerId] = useState<string>("");
+  const [duplicateCustomerId, setDuplicateCustomerId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleMerge = async () => {
+    if (!primaryCustomerId || !duplicateCustomerId) {
+      toast.error("Pilih kedua customer untuk digabungkan");
+      return;
+    }
+
+    if (primaryCustomerId === duplicateCustomerId) {
+      toast.error("Tidak bisa menggabungkan customer yang sama");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onMerge({
+        primaryCustomerId,
+        duplicateCustomerId,
+      });
+      onClose();
+      setPrimaryCustomerId("");
+      setDuplicateCustomerId("");
+    } catch (error) {
+      console.error("Merge failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const primaryCustomer = customers.find((c) => c.id === primaryCustomerId);
+  const duplicateCustomer = customers.find((c) => c.id === duplicateCustomerId);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Gabung Customer
+          </DialogTitle>
+          <DialogDescription>
+            Pilih dua customer yang akan digabungkan. Customer pertama akan
+            menjadi customer utama, dan customer kedua akan dihapus setelah data
+            digabungkan.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Primary Customer Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Customer Utama</label>
+            <Select
+              value={primaryCustomerId}
+              onValueChange={setPrimaryCustomerId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih customer utama" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.name} - {customer.phone}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {primaryCustomer && (
+              <div className="p-3 bg-blue-50 rounded-lg text-sm">
+                <div className="font-medium">{primaryCustomer.name}</div>
+                <div className="text-gray-600">{primaryCustomer.phone}</div>
+                {primaryCustomer.address && (
+                  <div className="text-gray-600">{primaryCustomer.address}</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Duplicate Customer Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Customer yang Akan Dihapus
+            </label>
+            <Select
+              value={duplicateCustomerId}
+              onValueChange={setDuplicateCustomerId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih customer yang akan dihapus" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers
+                  .filter((customer) => customer.id !== primaryCustomerId)
+                  .map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.name} - {customer.phone}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            {duplicateCustomer && (
+              <div className="p-3 bg-red-50 rounded-lg text-sm">
+                <div className="font-medium">{duplicateCustomer.name}</div>
+                <div className="text-gray-600">{duplicateCustomer.phone}</div>
+                {duplicateCustomer.address && (
+                  <div className="text-gray-600">
+                    {duplicateCustomer.address}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Warning */}
+          {primaryCustomer && duplicateCustomer && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">Peringatan</span>
+              </div>
+              <p className="text-sm text-yellow-700 mt-1">
+                Customer &quot;{duplicateCustomer.name}&quot; akan dihapus
+                setelah digabungkan dengan &quot;{primaryCustomer.name}&quot;.
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Batal
+          </Button>
+          <Button
+            onClick={handleMerge}
+            disabled={!primaryCustomerId || !duplicateCustomerId || isLoading}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {isLoading ? "Menggabungkan..." : "Gabungkan Customer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const CUSTOMER_COLUMNS = [
   {
     key: "name",
@@ -71,11 +273,14 @@ const CUSTOMER_COLUMNS = [
 
 export default function DataCustomer() {
   const { user } = useUser();
+  const { data: session } = useSession();
   const [filters, setFilters] = useState({
     search: "",
     page: 1,
     limit: 20,
   });
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+
   const {
     customers,
     pagination,
@@ -83,7 +288,7 @@ export default function DataCustomer() {
     error,
     createCustomer,
     updateCustomer,
-    downloadReport,
+    mergeCustomers,
   } = useCustomers(filters);
 
   const handleCreateCustomer = async (data: Partial<Customer>) => {
@@ -108,15 +313,97 @@ export default function DataCustomer() {
 
   const handleDownloadReport = async (customerId: string) => {
     try {
-      const reportData = await downloadReport(customerId);
-      console.log("Download report:", reportData);
+      console.log("Starting download report for customer:", customerId);
+
+      // Get customer data from API
+      const response = await fetch(
+        `/api/customers/${customerId}/download-report`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Response error:", errorText);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log("API response:", result);
+
+      if (!result.data) {
+        throw new Error("No data received from API");
+      }
+
+      const customerData: CustomerReportData = result.data;
+
+      // Create CSV content
+      let csvContent = "Customer Report\n\n";
+      csvContent += "Customer Information\n";
+      csvContent += `Name,${customerData.name}\n`;
+      csvContent += `Phone,${customerData.phone}\n`;
+      csvContent += `Address,${customerData.address || ""}\n`;
+      csvContent += `Notes,${customerData.notes || ""}\n\n`;
+
+      // Add services data
+      if (customerData.services && customerData.services.length > 0) {
+        csvContent += "Services\n";
+        csvContent +=
+          "Service ID,Created At,Device Type,Problem Description,Accessories Left,Status,Completed At\n";
+        customerData.services.forEach((service) => {
+          service.devices.forEach((device) => {
+            csvContent += `${service.id},${service.createdAt},${device.deviceType},${device.problemDescription},${device.accessoriesLeft},${device.status},${device.completedAt || ""}\n`;
+          });
+        });
+        csvContent += "\n";
+      }
+
+      // Add transactions data
+      if (customerData.transactions && customerData.transactions.length > 0) {
+        csvContent += "Transactions\n";
+        csvContent += "Transaction ID,Date,Description,Amount,Type\n";
+        customerData.transactions.forEach((transaction) => {
+          csvContent += `${transaction.id},${transaction.transactionDate},${transaction.description},${transaction.amount},${transaction.type}\n`;
+        });
+      }
+
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `customer-report-${customerData.name}-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Laporan berhasil diunduh");
     } catch (error) {
       console.error("Failed to download report:", error);
+      toast.error("Gagal mengunduh laporan");
     }
   };
 
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
+  };
+
+  const handleMergeCustomers = async (data: MergeCustomerData) => {
+    try {
+      await mergeCustomers(data);
+    } catch (error) {
+      console.error("Failed to merge customers:", error);
+    }
   };
 
   if (isLoading && customers.length === 0)
@@ -128,7 +415,12 @@ export default function DataCustomer() {
   // Header actions for ExcelTable
   const headerActions = (user?.role === "OWNER" ||
     user?.role === "TECHNICIAN") && (
-    <Button variant="outline" size="sm" className="flex items-center gap-2">
+    <Button
+      variant="outline"
+      size="sm"
+      className="flex items-center gap-2"
+      onClick={() => setIsMergeModalOpen(true)}
+    >
       <Users className="w-4 h-4" />
       Gabung Customer
     </Button>
@@ -167,6 +459,7 @@ export default function DataCustomer() {
                 title=""
                 data={customers}
                 columns={CUSTOMER_COLUMNS}
+                showDuplicate={false}
                 onAdd={handleCreateCustomer}
                 onUpdate={handleUpdateCustomer}
                 onDelete={handleDeleteCustomer}
@@ -197,6 +490,14 @@ export default function DataCustomer() {
           )}
         </div>
       </div>
+
+      {/* Merge Customer Modal */}
+      <MergeCustomerModal
+        isOpen={isMergeModalOpen}
+        onClose={() => setIsMergeModalOpen(false)}
+        customers={customers}
+        onMerge={handleMergeCustomers}
+      />
     </div>
   );
 }

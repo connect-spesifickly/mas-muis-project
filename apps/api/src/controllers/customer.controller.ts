@@ -67,16 +67,13 @@ class CustomerController {
   async downloadReport(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const file = await customerService.downloadReport(id);
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=customer-report.xlsx`
-      );
-      res.end(file);
+      const data = await customerService.downloadReport(id);
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "Customer report data",
+        data: data,
+      });
     } catch (err) {
       next(err);
     }
