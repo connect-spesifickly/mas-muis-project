@@ -27,12 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { createService, getCustomers } from "../actions";
 import { toast } from "sonner";
@@ -144,37 +138,11 @@ export function AddPatientDialog({
             <Label htmlFor="date" className="text-right">
               Tanggal
             </Label>
-            <Controller
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal col-span-3",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pilih tanggal</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
+            <Input
+              type="date"
+              id="date"
+              {...form.register("date")}
+              className="col-span-3"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
