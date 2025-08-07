@@ -137,34 +137,6 @@ export default function FinancialReportPage() {
                         Login Ulang
                       </Button>
                     </div>
-                    {process.env.NODE_ENV === "development" && (
-                      <details className="mt-4">
-                        <summary className="cursor-pointer text-xs font-medium">
-                          Debug Info
-                        </summary>
-                        <div className="mt-2 text-xs bg-gray-100 p-3 rounded space-y-2">
-                          <div>
-                            <strong>Error Message:</strong> {error.message}
-                          </div>
-                          {error.details && (
-                            <div>
-                              <strong>Error Details:</strong>
-                              <pre className="mt-1 bg-white p-2 rounded text-xs overflow-auto">
-                                {JSON.stringify(error.details, null, 2)}
-                              </pre>
-                            </div>
-                          )}
-                          <div>
-                            <strong>Session Info:</strong>
-                            <div>Role: {session?.role}</div>
-                            <div>
-                              Token Available:{" "}
-                              {session?.accessToken ? "Yes" : "No"}
-                            </div>
-                          </div>
-                        </div>
-                      </details>
-                    )}
                   </div>
                 </div>
               </div>
@@ -194,25 +166,6 @@ export default function FinancialReportPage() {
 
       <div className="flex flex-col w-full">
         <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
-          {/* Debug Info in Development */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-yellow-800 mb-2">
-                Debug Info
-              </h3>
-              <div className="text-xs text-yellow-700 space-y-1">
-                <p>Status: {status}</p>
-                <p>Role: {session?.role || "Not set"}</p>
-                <p>
-                  Token: {session?.accessToken ? "Available" : "Not available"}
-                </p>
-                <p>Selected Month: {selectedMonth}</p>
-                <p>Selected Year: {selectedYear}</p>
-                <p>Valuation Year: {valuationYear}</p>
-              </div>
-            </div>
-          )}
-
           {/* Main Content - Two Column Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* LEFT COLUMN - POSISI KAS & RINCIAN BULANAN */}

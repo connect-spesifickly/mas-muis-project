@@ -7,7 +7,7 @@ import { useCustomers } from "@/hooks/use-customer";
 import { Transaction } from "@/types/transaction";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileSpreadsheet, Calendar, TrendingUp } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 
 // Import components
 import {
@@ -26,9 +26,6 @@ export default function TransaksiKas() {
     year: new Date().getFullYear(),
   });
 
-  console.log("Transaction Page - User:", session?.user);
-  console.log("Transaction Page - Filters:", filters);
-
   // Fetch transactions
   const {
     transactions,
@@ -43,10 +40,6 @@ export default function TransaksiKas() {
     userRole: session?.role,
   });
 
-  console.log("Transaction Page - Transactions:", transactions);
-  console.log("Transaction Page - Loading:", isLoading);
-  console.log("Transaction Page - Error:", error);
-
   // Get customers for dropdown
   const { customers: customerList } = useCustomers({
     page: 1,
@@ -56,26 +49,6 @@ export default function TransaksiKas() {
   // Format transactions for display
   const displayTransactions = transactions.map((transaction) =>
     formatTransactionForDisplay(transaction, customerList)
-  );
-
-  // Calculate summary data
-  const totalIncome = transactions
-    .filter((t) => t.type === "INCOME")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpense = transactions
-    .filter((t) => t.type === "EXPENSE")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const netCash = totalIncome - totalExpense;
-
-  // Debug: log transaction data for sorting
-  console.log("Raw transactions:", transactions);
-  console.log("Display transactions:", displayTransactions);
-  console.log("First transaction createdAt:", transactions[0]?.createdAt);
-  console.log(
-    "First transaction transactionDate:",
-    transactions[0]?.transactionDate
   );
 
   // Check if user is authenticated
@@ -157,26 +130,6 @@ export default function TransaksiKas() {
                       Gagal memuat data transaksi kas. Silakan coba lagi atau
                       hubungi administrator.
                     </p>
-                    {process.env.NODE_ENV === "development" && (
-                      <details className="mt-4">
-                        <summary className="cursor-pointer text-xs font-medium">
-                          Debug Info
-                        </summary>
-                        <div className="mt-2 text-xs bg-gray-100 p-3 rounded space-y-2">
-                          <div>
-                            <strong>Error Message:</strong> {error.message}
-                          </div>
-                          <div>
-                            <strong>Session Info:</strong>
-                            <div>Role: {session?.role}</div>
-                            <div>
-                              Token Available:{" "}
-                              {session?.accessToken ? "Yes" : "No"}
-                            </div>
-                          </div>
-                        </div>
-                      </details>
-                    )}
                   </div>
                 </div>
               </div>
@@ -249,96 +202,6 @@ export default function TransaksiKas() {
 
       <div className="flex flex-col w-full">
         <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
-          {/* Debug Info in Development */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-yellow-800 mb-2">
-                Debug Info
-              </h3>
-              <div className="text-xs text-yellow-700 space-y-1">
-                <p>Status: {status}</p>
-                <p>Role: {session?.role || "Not set"}</p>
-                <p>
-                  Token: {session?.accessToken ? "Available" : "Not available"}
-                </p>
-                <p>Selected Month: {filters.month}</p>
-                <p>Selected Year: {filters.year}</p>
-                <p>Transactions Count: {transactions.length}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  Total Pemasukan
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  Kas masuk bulan ini
-                </p>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-green-600">
-                  {new Intl.NumberFormat("id-ID", {
-                    style: "currency",
-                    currency: "IDR",
-                    minimumFractionDigits: 0,
-                  }).format(totalIncome)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-red-600 rotate-180" />
-                  Total Pengeluaran
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  Kas keluar bulan ini
-                </p>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-red-600">
-                  {new Intl.NumberFormat("id-ID", {
-                    style: "currency",
-                    currency: "IDR",
-                    minimumFractionDigits: 0,
-                  }).format(totalExpense)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  Saldo Bersih
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  Pemasukan - Pengeluaran
-                </p>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div
-                  className={`text-2xl font-bold ${netCash >= 0 ? "text-green-600" : "text-red-600"}`}
-                >
-                  {new Intl.NumberFormat("id-ID", {
-                    style: "currency",
-                    currency: "IDR",
-                    minimumFractionDigits: 0,
-                  }).format(Math.abs(netCash))}
-                  <span className="text-sm ml-1">
-                    {netCash >= 0 ? "+" : "-"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Filter Card */}
           <Card>
             <CardHeader>

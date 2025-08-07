@@ -124,9 +124,6 @@ export function TransactionTable({
     return undefined; // Fallback to default renderCell
   };
 
-  console.log("TransactionTable - displayTransactions:", displayTransactions);
-  console.log("TransactionTable - showRunningBalance:", showRunningBalance);
-
   return (
     <div className="w-full">
       <ExcelTable

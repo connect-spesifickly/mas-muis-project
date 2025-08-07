@@ -22,14 +22,6 @@ export default function AssetStockPage() {
   const [assetSearchTerm, setAssetSearchTerm] = useState("");
   const [stockSearchTerm, setStockSearchTerm] = useState("");
 
-  // Debug session info
-  React.useEffect(() => {
-    if (status === "authenticated") {
-      console.log("Session:", session);
-      console.log("Access Token:", session?.accessToken);
-    }
-  }, [session, status]);
-
   const {
     assets,
     totalValue: assetsTotal,
@@ -295,16 +287,6 @@ export default function AssetStockPage() {
                         Login Ulang
                       </Button>
                     )}
-                    {process.env.NODE_ENV === "development" && (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-xs">
-                          Debug Info
-                        </summary>
-                        <pre className="mt-1 text-xs bg-gray-100 p-2 rounded">
-                          {JSON.stringify(currentError, null, 2)}
-                        </pre>
-                      </details>
-                    )}
                   </div>
                 </div>
               </div>
@@ -339,26 +321,6 @@ export default function AssetStockPage() {
 
       <div className="flex flex-col w-full">
         <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
-          {/* Debug Info in Development */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-yellow-800 mb-2">
-                Debug Info
-              </h3>
-              <div className="text-xs text-yellow-700 space-y-1">
-                <p>Status: {status}</p>
-                <p>Role: {session?.role || "Not set"}</p>
-                <p>
-                  Token: {session?.accessToken ? "Available" : "Not available"}
-                </p>
-                <p>Assets Loading: {assetsLoading ? "Yes" : "No"}</p>
-                <p>Stocks Loading: {stocksLoading ? "Yes" : "No"}</p>
-                <p>Assets Error: {assetsError ? "Yes" : "No"}</p>
-                <p>Stocks Error: {stocksError ? "Yes" : "No"}</p>
-              </div>
-            </div>
-          )}
-
           {/* Asset and Stock Tables Side by Side */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Asset Section */}
