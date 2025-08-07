@@ -33,7 +33,6 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Plus,
   Save,
   X,
   MoreHorizontal,
@@ -467,12 +466,6 @@ export default function ExcelTable<
               />
             </div>
             {headerActions}
-            {onAdd && (
-              <Button onClick={handleAddRow} size="sm" disabled={loading}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
