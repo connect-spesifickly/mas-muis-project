@@ -19,9 +19,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ServiceStatus } from "@/lib/prisma";
+import { ServiceStatus } from "@/types/service";
 import { updateDeviceStatus } from "../actions";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface Device {
   id: number;
@@ -83,17 +83,12 @@ export function ServiceQueueTable({
     setUpdatingDeviceId(deviceId);
     const result = await updateDeviceStatus(deviceId, newStatus);
     if (result.success) {
-      toast({
-        title: "Sukses!",
-        description: `Status perangkat berhasil diperbarui ke ${statusLabels[newStatus]}.`,
-      });
+      toast.success(
+        `Status perangkat berhasil diperbarui ke ${statusLabels[newStatus]}.`
+      );
       onStatusUpdated();
     } else {
-      toast({
-        title: "Error",
-        description: result.message || "Gagal memperbarui status perangkat.",
-        variant: "destructive",
-      });
+      toast.error(result.message || "Gagal memperbarui status perangkat.");
     }
     setUpdatingDeviceId(null);
   };

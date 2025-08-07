@@ -1,6 +1,6 @@
 "use server";
 
-import { ServiceStatus } from "@/lib/prisma";
+import { ServiceStatus } from "@/types/service";
 
 export interface DeviceInput {
   deviceType: string;

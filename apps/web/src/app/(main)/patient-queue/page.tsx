@@ -12,7 +12,7 @@ import { AddPatientDialog } from "./_components/AddPatientDialog";
 import { ServiceQueueTable } from "./_components/ServiceQueueTable";
 import { getServices } from "./actions";
 import { Loader2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export default function PatientQueuePage() {
   const [services, setServices] = useState<any[]>([]);
@@ -24,11 +24,7 @@ export default function PatientQueuePage() {
     if (result.success && result.data) {
       setServices(result.data);
     } else {
-      toast({
-        title: "Error",
-        description: result.message || "Gagal memuat antrian pasien.",
-        variant: "destructive",
-      });
+      toast.error(result.message || "Gagal memuat antrian pasien.");
     }
     setLoading(false);
   }, []);

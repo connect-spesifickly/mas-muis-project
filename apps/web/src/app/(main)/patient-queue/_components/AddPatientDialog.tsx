@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { createService, getCustomers } from "../actions";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const deviceSchema = yup.object().shape({
   deviceType: yup.string().required("Jenis perangkat harus diisi."),
@@ -91,11 +91,7 @@ export function AddPatientDialog({
       if (result.success && result.customers) {
         setCustomers(result.customers);
       } else {
-        toast({
-          title: "Error",
-          description: result.message || "Gagal memuat daftar pelanggan.",
-          variant: "destructive",
-        });
+        toast.error(result.message || "Gagal memuat daftar pelanggan.");
       }
       setLoadingCustomers(false);
     };
@@ -111,10 +107,7 @@ export function AddPatientDialog({
     });
 
     if (result.success) {
-      toast({
-        title: "Sukses!",
-        description: "Antrian pasien berhasil ditambahkan.",
-      });
+      toast.success("Antrian pasien berhasil ditambahkan.");
       form.reset({
         date: new Date(),
         customerId: "",
@@ -125,11 +118,7 @@ export function AddPatientDialog({
       setOpen(false);
       onServiceAdded();
     } else {
-      toast({
-        title: "Error",
-        description: result.message || "Gagal menambahkan antrian pasien.",
-        variant: "destructive",
-      });
+      toast.error(result.message || "Gagal menambahkan antrian pasien.");
     }
   };
 
