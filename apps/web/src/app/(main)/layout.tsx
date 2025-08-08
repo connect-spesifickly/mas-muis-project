@@ -26,6 +26,7 @@ export default function MainLayout({
     if (pathname.startsWith("/sale")) return "sale";
     if (pathname.startsWith("/product")) return "product";
     if (pathname.startsWith("/customer")) return "customer";
+    if (pathname.startsWith("/patient-queue")) return "patient-queue";
     if (pathname.startsWith("/transaction")) return "transaction";
     if (pathname.startsWith("/financial-report")) return "financial-report";
     if (pathname.startsWith("/asset-stock")) return "asset-stock";
