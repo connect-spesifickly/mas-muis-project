@@ -43,7 +43,7 @@ export function MonthlySummaryCard({
         </div>
       </div>
 
-      <div className="bg-orange-50 rounded-lg border border-orange-100 p-3">
+      {/* <div className="bg-orange-50 rounded-lg border border-orange-100 p-3">
         <div className="flex items-center gap-2 mb-2">
           <Calculator className="h-4 w-4 text-orange-600 flex-shrink-0" />
           <span className="text-xs font-medium text-orange-700">HPP</span>
@@ -51,7 +51,7 @@ export function MonthlySummaryCard({
         <div className="text-sm font-semibold text-orange-900 break-words">
           {formatCurrency(monthlySummary.hpp)}
         </div>
-      </div>
+      </div> */}
 
       <Separator className="my-3" />
 
