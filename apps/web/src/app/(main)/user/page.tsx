@@ -25,7 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Users, UserPlus, Trash2, RotateCcw, Search } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
 
 function CreateUserModal({
@@ -52,7 +51,7 @@ function CreateUserModal({
       await onCreate(formData);
       setFormData({ email: "", password: "", name: "", role: "TECHNICIAN" });
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled in the hook
     } finally {
       setLoading(false);
@@ -159,7 +158,7 @@ function DeleteUserModal({
     try {
       await onDelete(user.id);
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled in the hook
     } finally {
       setLoading(false);
@@ -213,7 +212,7 @@ function RestoreUserModal({
     try {
       await onRestore(user.id);
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled in the hook
     } finally {
       setLoading(false);
@@ -361,17 +360,30 @@ export default function UserManagement() {
   // Check if current user is OWNER
   if (currentUser?.role !== "OWNER") {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-              <p className="text-muted-foreground">
-                Only OWNER can access user management.
-              </p>
+      <div className="w-full h-full relative">
+        <div className="sticky top-16 z-40 bg-background border-b">
+          <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+            <div className="flex items-center justify-between flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+                User Management
+              </h1>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="flex flex-col w-full">
+          <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+                  <p className="text-muted-foreground">
+                    Only OWNER can access user management.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -405,65 +417,104 @@ export default function UserManagement() {
     }
   };
 
+  if (loading && users.length === 0) {
+    return <div className="p-6">Loading...</div>;
+  }
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">
-            Manage system users and their roles
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={showDeleted ? "default" : "outline"}
-            onClick={handleToggleDeleted}
-          >
-            {showDeleted ? "Show Active" : "Show Deleted"}
-          </Button>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search users..."
-            value={filters.search || ""}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="pl-10"
-          />
+    <div className="w-full h-full relative">
+      <div className="sticky top-16 z-40 bg-background border-b">
+        <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+          <div className="flex items-center justify-between flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+              User Management
+            </h1>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                {showDeleted ? deletedUsers.length : users.length} Users
+              </Badge>
+              <Button
+                variant={showDeleted ? "default" : "outline"}
+                size="sm"
+                onClick={handleToggleDeleted}
+              >
+                {showDeleted ? "Show Active" : "Show Deleted"}
+              </Button>
+              <Button size="sm" onClick={() => setShowCreateModal(true)}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add User
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-muted rounded animate-pulse" />
-                    <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                  </div>
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          {/* Search Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Search Users</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Search and filter users by name or email
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search users..."
+                  value={filters.search || ""}
+                  onChange={(e) =>
+                    setFilters({ ...filters, search: e.target.value })
+                  }
+                  className="pl-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* User List Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                {showDeleted ? "Deleted Users" : "Active Users"}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {showDeleted
+                  ? "Manage deleted users and restore them if needed"
+                  : "Manage system users and their roles"}
+              </p>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-muted rounded animate-pulse" />
+                            <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              ) : (
+                <UserTable
+                  users={showDeleted ? deletedUsers : users}
+                  onDelete={handleDeleteUser}
+                  onRestore={handleRestoreUser}
+                  showDeleted={showDeleted}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
-      ) : (
-        <UserTable
-          users={showDeleted ? deletedUsers : users}
-          onDelete={handleDeleteUser}
-          onRestore={handleRestoreUser}
-          showDeleted={showDeleted}
-        />
-      )}
+      </div>
 
       <CreateUserModal
         isOpen={showCreateModal}
