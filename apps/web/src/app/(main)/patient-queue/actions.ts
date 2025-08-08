@@ -1,8 +1,6 @@
 "use server";
 
 import { ServiceStatus } from "@/types/service";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export interface DeviceInput {
   deviceType: string;
@@ -15,10 +13,12 @@ export interface CreateServiceData {
   devices: DeviceInput[];
 }
 
-// Fetch customers for dropdown
-export async function getCustomers() {
-  const session = await getServerSession(authOptions);
-  const token = session?.accessToken;
+// Fetch customers for dropdown - client side function
+export async function getCustomers(token?: string) {
+  if (!token) {
+    return { success: false, message: "Authentication required" };
+  }
+
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/customers`,
@@ -38,15 +38,17 @@ export async function getCustomers() {
       success: false,
       message: data.message || "Gagal memuat customer.",
     };
-  } catch (error) {
+  } catch {
     return { success: false, message: "Gagal memuat customer." };
   }
 }
 
-// List services (patient queue)
-export async function getServices(page = 1, pageSize = 10) {
-  const session = await getServerSession(authOptions);
-  const token = session?.accessToken;
+// List services (patient queue) - client side function
+export async function getServices(page = 1, pageSize = 10, token?: string) {
+  if (!token) {
+    return { success: false, message: "Authentication required" };
+  }
+
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services?page=${page}&pageSize=${pageSize}`,
@@ -73,19 +75,26 @@ export async function getServices(page = 1, pageSize = 10) {
       success: false,
       message: data.message || "Gagal memuat antrian pasien.",
     };
-  } catch (error) {
+  } catch {
     return { success: false, message: "Gagal memuat antrian pasien." };
   }
 }
 
-// Create new service
-export async function createService(data: CreateServiceData) {
+// Create new service - client side function
+export async function createService(data: CreateServiceData, token?: string) {
+  if (!token) {
+    return { success: false, message: "Authentication required" };
+  }
+
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(data),
       }
     );
@@ -97,19 +106,30 @@ export async function createService(data: CreateServiceData) {
       success: false,
       message: result.message || "Gagal menambah antrian.",
     };
-  } catch (error) {
+  } catch {
     return { success: false, message: "Gagal menambah antrian." };
   }
 }
 
-// Update device status
-export async function updateDeviceStatus(id: number, status: ServiceStatus) {
+// Update device status - client side function
+export async function updateDeviceStatus(
+  id: number,
+  status: ServiceStatus,
+  token?: string
+) {
+  if (!token) {
+    return { success: false, message: "Authentication required" };
+  }
+
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/devices/${id}/status`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ status }),
       }
     );
@@ -121,7 +141,7 @@ export async function updateDeviceStatus(id: number, status: ServiceStatus) {
       success: false,
       message: result.message || "Gagal update status.",
     };
-  } catch (error) {
+  } catch {
     return { success: false, message: "Gagal update status." };
   }
 }

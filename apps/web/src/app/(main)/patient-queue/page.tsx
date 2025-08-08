@@ -22,8 +22,16 @@ export default function PatientQueuePage() {
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
-    if (!session?.accessToken) return;
+    if (!session?.accessToken) {
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log(
+        "Fetching services with token:",
+        session.accessToken.substring(0, 20) + "..."
+      );
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services`,
         {
@@ -33,14 +41,20 @@ export default function PatientQueuePage() {
           },
         }
       );
+      console.log("Services API response status:", res.status);
       const data = await res.json();
+      console.log("Services API response data:", data);
+
       if (res.ok && Array.isArray(data.data)) {
         setServices(data.data);
       } else {
         setServices([]);
+        console.error("Services API error:", data);
         toast.error(data.message || "Gagal memuat antrian pasien.");
       }
     } catch (error) {
+      console.error("Services fetch error:", error);
+      setServices([]);
       toast.error("Gagal memuat antrian pasien.");
     }
     setLoading(false);

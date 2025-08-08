@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PlusCircle, Loader2, CalendarIcon } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
@@ -28,8 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { createService, getCustomers } from "../actions";
+import { createService } from "../actions";
 import { toast } from "sonner";
 
 const deviceSchema = yup.object().shape({
@@ -44,7 +42,8 @@ const formSchema = yup.object().shape({
   devices: yup
     .array()
     .of(deviceSchema)
-    .min(1, "Setidaknya satu perangkat harus ditambahkan."),
+    .min(1, "Setidaknya satu perangkat harus ditambahkan.")
+    .required(),
 });
 
 type FormData = yup.InferType<typeof formSchema>;
@@ -83,8 +82,18 @@ export function AddPatientDialog({
 
   useEffect(() => {
     async function fetchCustomers() {
-      if (!session?.accessToken) return;
+      if (!session?.accessToken) {
+        console.log("No session access token available");
+        return;
+      }
+
       try {
+        setLoadingCustomers(true);
+        console.log(
+          "Fetching customers with token:",
+          session.accessToken.substring(0, 20) + "..."
+        );
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/customers`,
           {
@@ -94,28 +103,52 @@ export function AddPatientDialog({
             },
           }
         );
+
+        console.log("Customer API response status:", res.status);
         const data = await res.json();
+        console.log("Customer API response data:", data);
+
         if (res.ok && Array.isArray(data.data)) {
+          console.log(
+            "Setting customers:",
+            data.data.length,
+            "customers found"
+          );
           setCustomers(data.data);
         } else {
+          console.error("Customer API error response:", data);
           setCustomers([]);
           toast.error(data.message || "Gagal memuat daftar pelanggan.");
         }
       } catch (error) {
+        console.error("Customer fetch error:", error);
+        setCustomers([]);
         toast.error("Gagal memuat daftar pelanggan.");
+      } finally {
+        setLoadingCustomers(false);
       }
-      setLoadingCustomers(false);
     }
-    fetchCustomers();
-  }, [session]);
+
+    if (open) {
+      fetchCustomers();
+    }
+  }, [session, open]);
 
   const selectedCustomer = form.watch("customerId");
 
   const onSubmit = async (data: FormData) => {
-    const result = await createService({
-      customerId: data.customerId,
-      devices: data.devices,
-    });
+    if (!session?.accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    const result = await createService(
+      {
+        customerId: data.customerId,
+        devices: data.devices,
+      },
+      session.accessToken
+    );
 
     if (result.success) {
       toast.success("Antrian pasien berhasil ditambahkan.");

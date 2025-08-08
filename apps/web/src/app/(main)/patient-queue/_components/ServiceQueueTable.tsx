@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { Check, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import {
   Table,
   TableBody,
@@ -75,13 +76,23 @@ export function ServiceQueueTable({
   onStatusUpdated,
 }: ServiceQueueTableProps) {
   const [updatingDeviceId, setUpdatingDeviceId] = useState<number | null>(null);
+  const { data: session } = useSession();
 
   const handleStatusUpdate = async (
     deviceId: number,
     newStatus: ServiceStatus
   ) => {
+    if (!session?.accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
     setUpdatingDeviceId(deviceId);
-    const result = await updateDeviceStatus(deviceId, newStatus);
+    const result = await updateDeviceStatus(
+      deviceId,
+      newStatus,
+      session.accessToken
+    );
     if (result.success) {
       toast.success(
         `Status perangkat berhasil diperbarui ke ${statusLabels[newStatus]}.`
