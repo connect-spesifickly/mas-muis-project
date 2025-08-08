@@ -6,4 +6,5 @@ export type PageType =
   | "customer"
   | "transaction"
   | "asset-stock"
-  | "patient-queue";
+  | "patient-queue"
+  | "user";

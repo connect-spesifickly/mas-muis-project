@@ -5,7 +5,7 @@ export default async function RootPage() {
   const session = await auth();
 
   if (session) {
-    redirect("/sale");
+    redirect("/customer");
   } else {
     redirect("/login");
   }

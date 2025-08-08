@@ -10,7 +10,6 @@ import type {
 
 export const customerApi = {
   list: async (params: CustomerFilters, token?: string) => {
-
     const response = await api.get<CustomerListResponse>("/customers", {
       params,
       headers: {
