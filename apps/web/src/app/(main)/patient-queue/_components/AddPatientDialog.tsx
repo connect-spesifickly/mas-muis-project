@@ -107,19 +107,8 @@ export function AddPatientDialog({
         console.log("Customer API response status:", res.status);
         const data = await res.json();
         console.log("Customer API response data:", data);
-
-        if (res.ok && Array.isArray(data.data)) {
-          console.log(
-            "Setting customers:",
-            data.data.length,
-            "customers found"
-          );
-          setCustomers(data.data);
-        } else {
-          console.error("Customer API error response:", data);
-          setCustomers([]);
-          toast.error(data.message || "Gagal memuat daftar pelanggan.");
-        }
+        console.log("Data Customers:", data.data.data);
+        setCustomers(data.data.data);
       } catch (error) {
         console.error("Customer fetch error:", error);
         setCustomers([]);

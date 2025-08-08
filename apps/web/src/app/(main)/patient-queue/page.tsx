@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AddPatientDialog } from "./_components/AddPatientDialog";
 import { ServiceQueueTable } from "./_components/ServiceQueueTable";
@@ -44,14 +38,8 @@ export default function PatientQueuePage() {
       console.log("Services API response status:", res.status);
       const data = await res.json();
       console.log("Services API response data:", data);
-
-      if (res.ok && Array.isArray(data.data)) {
-        setServices(data.data);
-      } else {
-        setServices([]);
-        console.error("Services API error:", data);
-        toast.error(data.message || "Gagal memuat antrian pasien.");
-      }
+      console.log("Data Services:", data.data.data);
+      setServices(data.data.data);
     } catch (error) {
       console.error("Services fetch error:", error);
       setServices([]);
