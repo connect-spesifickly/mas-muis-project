@@ -25,14 +25,11 @@ export function SidebarPage({ activePage }: SidebarProps) {
     };
   }, []);
   const sidebarItems: { id: PageType; label: string; icon: string }[] = [
-    { id: "sale", label: "Sale", icon: "shopping-cart" },
-    { id: "product", label: "Product", icon: "box" },
-    { id: "customer", label: "Customer", icon: "users" },
     { id: "patient-queue", label: "Antrian Pasien", icon: "users" },
+    { id: "customer", label: "Customer", icon: "users" },
     { id: "transaction", label: "Transaction", icon: "credit-card" },
-    { id: "financial-report", label: "Financial Report", icon: "trending-up" },
     { id: "asset-stock", label: "Asset & Stock", icon: "package" },
-    { id: "adjustment", label: "Adjustment", icon: "adjustment" },
+    { id: "financial-report", label: "Financial Report", icon: "trending-up" },
     { id: "user", label: "User Management", icon: "user-management" },
   ];
   const getIcon = (icon: string) => {
