@@ -55,7 +55,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Users, AlertTriangle, Download, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -259,6 +260,250 @@ function MergeCustomerModal({
   );
 }
 
+function ExportExcelModal({
+  isOpen,
+  onClose,
+  customers,
+  onExport,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  customers: Customer[];
+  onExport: (customerId: string) => Promise<void>;
+}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter(
+    (customer) =>
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.includes(searchTerm)
+  );
+
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+
+  const handleExport = async () => {
+    if (!selectedCustomerId) {
+      toast.error("Pilih customer untuk export data");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onExport(selectedCustomerId);
+      onClose();
+      setSearchTerm("");
+      setSelectedCustomerId("");
+      setShowDropdown(false);
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
+    setSearchTerm("");
+    setSelectedCustomerId("");
+    setShowDropdown(false);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setShowDropdown(e.target.value.length > 0);
+    setSelectedCustomerId(""); // Clear selection when searching
+  };
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomerId(customer.id);
+    setSearchTerm(customer.name);
+    setShowDropdown(false);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setSelectedCustomerId("");
+    setShowDropdown(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5" />
+            Export Data Customer
+          </DialogTitle>
+          <DialogDescription>
+            Ketik nama atau nomor HP customer untuk mencari dan export datanya
+            ke file Excel.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Search Input with Dropdown */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Cari Customer</label>
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Ketik nama atau nomor HP customer..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onFocus={() => searchTerm.length > 0 && setShowDropdown(true)}
+                  className="pl-10 pr-10"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Dropdown Results */}
+              {showDropdown && searchTerm && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {filteredCustomers.length > 0 ? (
+                    filteredCustomers.map((customer) => (
+                      <div
+                        key={customer.id}
+                        onClick={() => handleCustomerSelect(customer)}
+                        className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-gray-900">
+                          {customer.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {customer.phone}
+                        </div>
+                        {customer.address && (
+                          <div className="text-xs text-gray-400 mt-1 truncate">
+                            {customer.address}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-gray-500 text-center">
+                      Tidak ada customer ditemukan
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Selected Customer Preview */}
+          {selectedCustomer && (
+            <div className="relative p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 shadow-sm">
+              {/* Customer Info */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-3 h-3 text-green-600 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    ></path>
+                  </svg>
+                  <span className="text-sm font-semibold text-green-900">
+                    {selectedCustomer.name}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-3 h-3 text-green-600 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    ></path>
+                  </svg>
+                  <span className="text-xs text-green-700 font-medium">
+                    {selectedCustomer.phone}
+                  </span>
+                </div>
+
+                {selectedCustomer.address && (
+                  <div className="flex items-start gap-2">
+                    <svg
+                      className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      ></path>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      ></path>
+                    </svg>
+                    <span className="text-xs text-green-600 leading-relaxed">
+                      {selectedCustomer.address}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom accent */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-b-lg"></div>
+            </div>
+          )}
+
+          {/* Info */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-sm text-blue-800">
+              <span className="font-medium">Info:</span> Export akan
+              menghasilkan file Excel dengan data lengkap customer termasuk
+              riwayat service dan transaksi.
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+            Batal
+          </Button>
+          <Button
+            onClick={handleExport}
+            disabled={!selectedCustomerId || isLoading}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isLoading ? "Mengexport..." : "Export Excel"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const CUSTOMER_COLUMNS = [
   {
     key: "name",
@@ -281,6 +526,7 @@ export default function DataCustomer() {
     limit: 20,
   });
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const {
     customers,
@@ -479,17 +725,32 @@ export default function DataCustomer() {
     return <div className="p-6 text-red-500">Error: {error.message}</div>;
 
   // Header actions for ExcelTable
-  const headerActions = (user?.role === "OWNER" ||
-    user?.role === "TECHNICIAN") && (
-    <Button
-      variant="outline"
-      size="sm"
-      className="flex items-center gap-2"
-      onClick={() => setIsMergeModalOpen(true)}
-    >
-      <Users className="w-4 h-4" />
-      Gabung Customer
-    </Button>
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      {(user?.role === "OWNER" || user?.role === "TECHNICIAN") && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => setIsMergeModalOpen(true)}
+        >
+          <Users className="w-4 h-4" />
+          Gabung Customer
+        </Button>
+      )}
+
+      {user?.role === "OWNER" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2 bg-green-50 border-green-200 hover:bg-green-100 text-green-700"
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          <Download className="w-4 h-4" />
+          Export Excel
+        </Button>
+      )}
+    </div>
   );
 
   return (
@@ -563,6 +824,14 @@ export default function DataCustomer() {
         onClose={() => setIsMergeModalOpen(false)}
         customers={customers}
         onMerge={handleMergeCustomers}
+      />
+
+      {/* Export Excel Modal */}
+      <ExportExcelModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        customers={customers}
+        onExport={handleDownloadReport}
       />
     </div>
   );

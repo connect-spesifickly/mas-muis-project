@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { createService } from "../actions";
 import { toast } from "sonner";
+import { Router } from "express";
 
 const deviceSchema = yup.object().shape({
   deviceType: yup.string().required("Jenis perangkat harus diisi."),
@@ -195,7 +196,7 @@ export function AddPatientDialog({
                 <Select
                   onValueChange={(val) => {
                     if (val === "add-new") {
-                      window.open("/customer", "_blank");
+                      window.location.href = "/customer";
                     } else {
                       field.onChange(val);
                     }

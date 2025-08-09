@@ -29,6 +29,7 @@ class ServiceService {
             select: {
               id: true,
               name: true,
+              phone: true,
             },
           },
           devices: {

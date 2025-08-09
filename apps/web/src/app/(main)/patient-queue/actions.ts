@@ -117,13 +117,15 @@ export async function updateDeviceStatus(
   status: ServiceStatus,
   token?: string
 ) {
+  console.log("ini params", id, status, token);
+  console.log("ini token", token);
   if (!token) {
     return { success: false, message: "Authentication required" };
   }
-
   try {
+    console.log("oiy ini token", token, "ini id", id, "ini status", status);
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/devices/${id}/status`,
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services/devices/${id}/status`,
       {
         method: "PATCH",
         headers: {
@@ -133,15 +135,33 @@ export async function updateDeviceStatus(
         body: JSON.stringify({ status }),
       }
     );
-    const result = await res.json();
+
+    // Ambil text dulu, baru coba parse JSON
+    const responseText = await res.text();
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      console.error("JSON parse error. Response text:", responseText);
+      return {
+        success: false,
+        message: `Server mengembalikan response yang tidak valid: ${responseText}`,
+      };
+    }
     if (res.ok && result.data) {
       return { success: true, device: result.data };
     }
+
     return {
       success: false,
       message: result.message || "Gagal update status.",
     };
-  } catch {
-    return { success: false, message: "Gagal update status." };
+  } catch (err) {
+    console.log("Fetch error:", err);
+    return {
+      success: false,
+      message: `Gagal update status. dengan error ${err}`,
+    };
   }
 }
