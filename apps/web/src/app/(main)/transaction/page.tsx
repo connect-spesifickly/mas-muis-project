@@ -7,13 +7,12 @@ import { useCustomers } from "@/hooks/use-customer";
 import { Transaction } from "@/types/transaction";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileSpreadsheet } from "lucide-react";
 
 // Import components
 import {
   TransactionFilters,
   TransactionTable,
-  handleExportExcel,
+  TransactionExportModal,
   formatTransactionForDisplay,
   handleCreateTransaction as createTransactionHandler,
   handleUpdateTransaction as updateTransactionHandler,
@@ -25,6 +24,7 @@ export default function TransaksiKas() {
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
   });
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Fetch transactions
   const {
@@ -169,10 +169,6 @@ export default function TransaksiKas() {
     await deleteTransaction(id);
   };
 
-  const handleExport = () => {
-    handleExportExcel(transactions, customerList);
-  };
-
   if (isLoading) return <div className="p-6">Loading...</div>;
 
   return (
@@ -187,14 +183,6 @@ export default function TransaksiKas() {
               <Badge variant="secondary" className="text-sm">
                 {filters.month}/{filters.year}
               </Badge>
-              <button
-                onClick={handleExport}
-                disabled={isLoading || !transactions?.length}
-                className="flex items-center gap-2 px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                Export
-              </button>
             </div>
           </div>
         </div>
@@ -211,6 +199,8 @@ export default function TransaksiKas() {
               <TransactionFilters
                 filters={filters}
                 onFiltersChange={handleFilterChange}
+                onExportClick={() => setIsExportModalOpen(true)}
+                isExportDisabled={isLoading || !transactions?.length}
               />
             </CardContent>
           </Card>
@@ -218,10 +208,12 @@ export default function TransaksiKas() {
           {/* Transaction Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Daftar Transaksi</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Kelola semua transaksi kas masuk dan keluar
-              </p>
+              <div>
+                <CardTitle className="text-lg">Daftar Transaksi</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Kelola semua transaksi kas masuk dan keluar
+                </p>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <TransactionTable
@@ -238,6 +230,14 @@ export default function TransaksiKas() {
           </Card>
         </div>
       </div>
+
+      {/* Export Excel Modal */}
+      <TransactionExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        transactions={transactions}
+        customers={customerList}
+      />
     </div>
   );
 }

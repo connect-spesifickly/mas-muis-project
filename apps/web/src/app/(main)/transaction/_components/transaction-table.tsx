@@ -34,7 +34,7 @@ export function TransactionTable({
     {
       key: "customerId",
       label: "Customer",
-      type: "select" as const,
+      type: "searchable-select" as const,
       options: [
         "Pilih Customer",
         ...customerList.map((customer) => customer.name),

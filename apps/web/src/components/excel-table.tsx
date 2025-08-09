@@ -41,11 +41,19 @@ import {
   Copy,
   Download,
 } from "lucide-react";
+import { SearchableSelect } from "./searchable-select";
 
 interface Column {
   key: string;
   label: string;
-  type: "text" | "number" | "date" | "select" | "email" | "textarea";
+  type:
+    | "text"
+    | "number"
+    | "date"
+    | "select"
+    | "searchable-select"
+    | "email"
+    | "textarea";
   required?: boolean;
   options?: string[];
 }
@@ -400,6 +408,16 @@ export default function ExcelTable<
               ))}
             </SelectContent>
           </Select>
+        );
+      case "searchable-select":
+        return (
+          <SearchableSelect
+            value={String(value || "")}
+            onValueChange={(val) => onChange?.(val)}
+            options={column.options || []}
+            placeholder="Pilih..."
+            className="h-8"
+          />
         );
       case "textarea":
         return (

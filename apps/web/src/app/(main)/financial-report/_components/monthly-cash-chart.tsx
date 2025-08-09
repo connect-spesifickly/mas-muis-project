@@ -77,51 +77,44 @@ export function MonthlyCashChart({
   });
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold text-gray-800">
-          Grafik Saldo Kas Bulanan {selectedYear}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="month"
-                stroke="#6b7280"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#6b7280"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => {
-                  if (value >= 1000000) {
-                    return `${(value / 1000000).toFixed(0)}M`;
-                  } else if (value >= 1000) {
-                    return `${(value / 1000).toFixed(0)}K`;
-                  }
-                  return value.toString();
-                }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="omset"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: "#3b82f6", strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    // <Card className="border-0 shadow-none bg-transparent">
+    <div className="h-[300px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis
+            dataKey="month"
+            stroke="#6b7280"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="#6b7280"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => {
+              if (value >= 1000000) {
+                return `${(value / 1000000).toFixed(0)}M`;
+              } else if (value >= 1000) {
+                return `${(value / 1000).toFixed(0)}K`;
+              }
+              return value.toString();
+            }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Line
+            type="monotone"
+            dataKey="omset"
+            stroke="#3b82f6"
+            strokeWidth={3}
+            dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+            activeDot={{ r: 6, stroke: "#3b82f6", strokeWidth: 2 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+    // </Card>
   );
 }
