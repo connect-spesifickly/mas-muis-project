@@ -77,7 +77,6 @@ export function MonthlyCashChart({
   });
 
   return (
-    // <Card className="border-0 shadow-none bg-transparent">
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData}>
@@ -115,6 +114,5 @@ export function MonthlyCashChart({
         </LineChart>
       </ResponsiveContainer>
     </div>
-    // </Card>
   );
 }

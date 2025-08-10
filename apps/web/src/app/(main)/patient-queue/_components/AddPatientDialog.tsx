@@ -19,17 +19,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  SearchableDropdown,
+  SearchableDropdownOption,
+} from "@/components/ui/searchable-dropdown";
 import { createService } from "../actions";
 import { toast } from "sonner";
-import { Router } from "express";
 
 const deviceSchema = yup.object().shape({
   deviceType: yup.string().required("Jenis perangkat harus diisi."),
@@ -189,53 +185,59 @@ export function AddPatientDialog({
             <Label htmlFor="customerId" className="text-right">
               Nama Customer
             </Label>
-            <Controller
-              control={form.control}
-              name="customerId"
-              render={({ field }) => (
-                <Select
-                  onValueChange={(val) => {
-                    if (val === "add-new") {
-                      window.location.href = "/customer";
-                    } else {
-                      field.onChange(val);
-                    }
-                  }}
-                  value={field.value}
-                  disabled={loadingCustomers}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Pilih customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingCustomers ? (
-                      <SelectItem value="loading" disabled>
-                        <Loader2 className="animate-spin mr-2 h-4 w-4 inline-block" />{" "}
-                        Memuat...
-                      </SelectItem>
-                    ) : customers.length === 0 ? (
-                      <SelectItem value="no-customers" disabled>
-                        Tidak ada customer tersedia
-                      </SelectItem>
-                    ) : (
-                      <>
-                        {(customers || []).map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name}
-                          </SelectItem>
-                        ))}
-                        <SelectItem
-                          value="add-new"
-                          className="text-blue-600 font-semibold"
-                        >
-                          + Tambah customer baru...
-                        </SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
+            <div className="col-span-3">
+              {loadingCustomers ? (
+                <div className="flex items-center justify-center p-4 border rounded-md">
+                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                  Memuat daftar customer...
+                </div>
+              ) : customers.length === 0 ? (
+                <div className="flex items-center justify-center p-4 border rounded-md text-muted-foreground">
+                  Tidak ada customer tersedia
+                </div>
+              ) : (
+                <>
+                  <Controller
+                    control={form.control}
+                    name="customerId"
+                    render={({ field }) => {
+                      const customerOptions: SearchableDropdownOption[] =
+                        customers.map((customer) => ({
+                          value: customer.id,
+                          label: customer.name,
+                          description: customer.phone,
+                        }));
+
+                      return (
+                        <SearchableDropdown
+                          options={customerOptions}
+                          value={field.value}
+                          onValueChange={(val) => {
+                            if (val === "add-new") {
+                              window.location.href = "/customer";
+                            } else {
+                              field.onChange(val);
+                            }
+                          }}
+                          placeholder="Pilih customer"
+                          searchPlaceholder="Cari nama customer..."
+                          disabled={loadingCustomers}
+                        />
+                      );
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full"
+                    onClick={() => (window.location.href = "/customer")}
+                  >
+                    + Tambah customer baru
+                  </Button>
+                </>
               )}
-            />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="customerPhone" className="text-right">
