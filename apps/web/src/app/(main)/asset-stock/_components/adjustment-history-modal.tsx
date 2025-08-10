@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Download, X, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { assetStockApi } from "@/lib/api/asset-stock";
 import { AdjustmentHistory } from "@/types/asset-stock";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,14 +26,6 @@ interface AdjustmentHistoryModalProps {
   itemId?: string;
   itemName?: string;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString("id-ID", {
@@ -53,6 +47,7 @@ export function AdjustmentHistoryModal({
   const { data: session } = useSession();
   const [history, setHistory] = useState<AdjustmentHistory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -82,184 +77,193 @@ export function AdjustmentHistoryModal({
     }
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = async () => {
     if (history.length === 0) {
       toast.error("Tidak ada data untuk diexport");
       return;
     }
 
-    const headers = [
-      "Tanggal",
-      "Item",
-      "Tipe",
-      "Perubahan Kuantitas",
-      "Alasan",
-      "Dilakukan Oleh",
-      "Email",
-    ];
+    setExporting(true);
+    try {
+      // Create workbook and worksheet
+      const workbook = {
+        SheetNames: ["History Penyesuaian"],
+        Sheets: {
+          "History Penyesuaian": {},
+        },
+      };
 
-    const csvContent = [
-      headers.join(","),
-      ...history.map((item) =>
-        [
-          `"${formatDate(item.adjustedAt)}"`,
-          `"${item.item.name}"`,
-          `"${item.item.type}"`,
+      // Define headers
+      const headers = [
+        "Tanggal",
+        "Item",
+        "Tipe",
+        "Perubahan Kuantitas",
+        "Alasan",
+        "Dilakukan Oleh",
+        "Email",
+      ];
+
+      // Create data array
+      const data = [
+        headers,
+        ...history.map((item) => [
+          formatDate(item.adjustedAt),
+          item.item.name,
+          item.item.type === "ASSET" ? "Aset" : "Stok",
           item.quantityChange,
-          `"${item.reason}"`,
-          `"${item.recordedBy.name}"`,
-          `"${item.recordedBy.email}"`,
-        ].join(",")
-      ),
-    ].join("\n");
+          item.reason,
+          item.recordedBy.name,
+          item.recordedBy.email,
+        ]),
+      ];
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `history-penyesuaian-${type || "all"}-${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Convert to worksheet format
+      const worksheet = {};
+      data.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+          const cellAddress =
+            String.fromCharCode(65 + colIndex) + (rowIndex + 1);
+          worksheet[cellAddress] = { v: cell };
+        });
+      });
 
-    toast.success("File CSV berhasil didownload");
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 20 }, // Tanggal
+        { wch: 25 }, // Item
+        { wch: 10 }, // Tipe
+        { wch: 15 }, // Perubahan Kuantitas
+        { wch: 30 }, // Alasan
+        { wch: 20 }, // Dilakukan Oleh
+        { wch: 25 }, // Email
+      ];
+
+      workbook.Sheets["History Penyesuaian"] = worksheet;
+
+      // Convert to binary string
+      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "binary" });
+
+      // Convert binary string to blob
+      const blob = new Blob([s2ab(wbout)], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Download file
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `history-penyesuaian-${type || "all"}-${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("File Excel berhasil didownload");
+      onClose(); // Close modal setelah download berhasil
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Gagal mengexport file Excel");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Helper function to convert string to array buffer
+  const s2ab = (s: string) => {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+    return buf;
   };
 
   const getTitle = () => {
     if (itemId && itemName) {
-      return `History Penyesuaian - ${itemName}`;
+      return `Download History Penyesuaian - ${itemName}`;
     }
     if (type) {
-      return `History Penyesuaian ${type === "ASSET" ? "Aset" : "Stok"}`;
+      return `Download History Penyesuaian ${type === "ASSET" ? "Aset" : "Stok"}`;
     }
-    return "History Penyesuaian Semua Item";
+    return "Download History Penyesuaian";
+  };
+
+  const getDescription = () => {
+    if (itemId && itemName) {
+      return `Apakah Anda ingin mendownload history penyesuaian untuk item "${itemName}"?`;
+    }
+    if (type) {
+      return `Apakah Anda ingin mendownload history penyesuaian untuk semua ${type === "ASSET" ? "aset" : "stok"}?`;
+    }
+    return "Apakah Anda ingin mendownload history penyesuaian untuk semua item?";
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-xl">{getTitle()}</DialogTitle>
-              <DialogDescription>
-                Riwayat penyesuaian kuantitas aset dan stok
-              </DialogDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={exportToCSV}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-                disabled={loading || history.length === 0}
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-green-600" />
+            {getTitle()}
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            {getDescription()}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4">
+        <div className="py-4">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-6">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Memuat history...</span>
-            </div>
-          ) : history.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Tidak ada history penyesuaian
+              <span className="text-sm text-gray-600">Memuat data...</span>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                      Tanggal
-                    </th>
-                    <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                      Item
-                    </th>
-                    <th className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-700">
-                      Tipe
-                    </th>
-                    <th className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-700">
-                      Perubahan
-                    </th>
-                    <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                      Alasan
-                    </th>
-                    <th className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                      Dilakukan Oleh
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-3 py-2 text-xs text-gray-600">
-                        {formatDate(item.adjustedAt)}
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2">
-                        <div className="font-medium text-gray-900">
-                          {item.item.name}
-                        </div>
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        <Badge
-                          variant={
-                            item.item.type === "ASSET" ? "default" : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {item.item.type === "ASSET" ? "Aset" : "Stok"}
-                        </Badge>
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-center">
-                        <Badge
-                          variant={
-                            item.quantityChange > 0 ? "default" : "destructive"
-                          }
-                          className="text-xs"
-                        >
-                          {item.quantityChange > 0 ? "+" : ""}
-                          {item.quantityChange}
-                        </Badge>
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-xs text-gray-600 max-w-[200px] break-words">
-                        {item.reason}
-                      </td>
-                      <td className="border border-gray-300 px-3 py-2 text-xs text-gray-600">
-                        <div>
-                          <div className="font-medium">
-                            {item.recordedBy.name}
-                          </div>
-                          <div className="text-gray-500">
-                            {item.recordedBy.email}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Total data tersedia:</span>
+                <Badge variant="secondary" className="text-sm font-medium">
+                  {history.length} records
+                </Badge>
+              </div>
+              {history.length > 0 && (
+                <div className="mt-2 text-xs text-gray-500">
+                  Data akan diexport dalam format Excel (.xlsx)
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={exporting}
+          >
+            Batal
+          </Button>
+          <Button
+            type="button"
+            onClick={exportToExcel}
+            disabled={loading || history.length === 0 || exporting}
+            className="flex items-center gap-2"
+          >
+            {exporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Download Excel
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
