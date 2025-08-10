@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Package, HardDrive, Plus, Search } from "lucide-react";
+import { Package, HardDrive, Plus, Search, History } from "lucide-react";
 import { useAssets, useStocks, useAdjustment } from "@/hooks/use-asset-stock";
-import { ItemTable, AdjustmentModal, AddItemModal } from "./_components";
+import {
+  ItemTable,
+  AdjustmentModal,
+  AddItemModal,
+  AdjustmentHistoryModal,
+} from "./_components";
 import {
   Asset,
   Stock,
@@ -54,6 +59,13 @@ export default function AssetStockPage() {
   const [addItemModal, setAddItemModal] = useState({
     isOpen: false,
     type: null as "ASSET" | "STOCK" | null,
+  });
+
+  const [historyModal, setHistoryModal] = useState({
+    isOpen: false,
+    type: null as "ASSET" | "STOCK" | null,
+    itemId: null as string | null,
+    itemName: null as string | null,
   });
 
   // Check if user is authenticated
@@ -125,6 +137,28 @@ export default function AssetStockPage() {
 
   const handleCloseAddModal = () => {
     setAddItemModal({ isOpen: false, type: null });
+  };
+
+  const handleOpenHistoryModal = (
+    type?: "ASSET" | "STOCK",
+    itemId?: string,
+    itemName?: string
+  ) => {
+    setHistoryModal({
+      isOpen: true,
+      type: type || null,
+      itemId: itemId || null,
+      itemName: itemName || null,
+    });
+  };
+
+  const handleCloseHistoryModal = () => {
+    setHistoryModal({
+      isOpen: false,
+      type: null,
+      itemId: null,
+      itemName: null,
+    });
   };
 
   const handleAddAsset = async (data: CreateAssetData) => {
@@ -217,6 +251,10 @@ export default function AssetStockPage() {
         toast.error("Gagal menghapus item. Silakan coba lagi.");
       }
     }
+  };
+
+  const handleViewItemHistory = (item: Asset | Stock) => {
+    handleOpenHistoryModal(item.type, item.id, item.name);
   };
 
   // Filter items based on search terms
@@ -317,6 +355,15 @@ export default function AssetStockPage() {
               Aset & Stok
             </h1>
             <div className="flex items-center gap-2">
+              <Button
+                onClick={() => handleOpenHistoryModal()}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                History Penyesuaian
+              </Button>
               <Badge variant="secondary" className="text-sm">
                 Total:{" "}
                 {new Intl.NumberFormat("id-ID", {
@@ -341,14 +388,25 @@ export default function AssetStockPage() {
                   <HardDrive className="w-5 h-5 text-blue-600" />
                   Aset
                 </h2>
-                <Button
-                  onClick={() => handleAddItem("ASSET")}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Aset
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => handleOpenHistoryModal("ASSET")}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <History className="h-4 w-4" />
+                    History
+                  </Button>
+                  <Button
+                    onClick={() => handleAddItem("ASSET")}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tambah Aset
+                  </Button>
+                </div>
               </div>
 
               <div className="relative">
@@ -371,6 +429,7 @@ export default function AssetStockPage() {
                 onAdjustItem={handleAdjustItem}
                 onDeleteItem={handleDeleteItem}
                 canDelete={session?.role === "OWNER"}
+                onViewHistory={handleViewItemHistory}
               />
             </div>
 
@@ -381,14 +440,25 @@ export default function AssetStockPage() {
                   <Package className="w-5 h-5 text-green-600" />
                   Stok
                 </h2>
-                <Button
-                  onClick={() => handleAddItem("STOCK")}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Stok
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => handleOpenHistoryModal("STOCK")}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <History className="h-4 w-4" />
+                    History
+                  </Button>
+                  <Button
+                    onClick={() => handleAddItem("STOCK")}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tambah Stok
+                  </Button>
+                </div>
               </div>
 
               <div className="relative">
@@ -411,6 +481,7 @@ export default function AssetStockPage() {
                 onAdjustItem={handleAdjustItem}
                 onDeleteItem={handleDeleteItem}
                 canDelete={session?.role === "OWNER"}
+                onViewHistory={handleViewItemHistory}
               />
             </div>
           </div>
@@ -432,6 +503,15 @@ export default function AssetStockPage() {
         type={adjustmentModal.type}
         onClose={handleCloseAdjustmentModal}
         onAdjust={handleAdjustment}
+      />
+
+      {/* History Modal */}
+      <AdjustmentHistoryModal
+        isOpen={historyModal.isOpen}
+        type={historyModal.type || undefined}
+        itemId={historyModal.itemId || undefined}
+        itemName={historyModal.itemName || undefined}
+        onClose={handleCloseHistoryModal}
       />
     </div>
   );

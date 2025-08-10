@@ -291,6 +291,30 @@ class AssetStockController {
       next(error);
     }
   }
+
+  async getAdjustmentHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { type, itemId } = req.query;
+
+      let result;
+      if (itemId) {
+        result = await assetStockService.getItemAdjustmentHistory(
+          itemId as string
+        );
+      } else {
+        result = await assetStockService.getAdjustmentHistory(type as any);
+      }
+
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "Adjustment history retrieved successfully",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new AssetStockController();

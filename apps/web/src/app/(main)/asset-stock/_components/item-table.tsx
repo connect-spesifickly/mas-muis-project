@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Edit, Trash2, MoreHorizontal, History } from "lucide-react";
 import { Asset, Stock } from "@/types/asset-stock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ interface ItemTableProps {
   onAdjustItem: (item: Asset | Stock) => void;
   onDeleteItem: (item: Asset | Stock) => void;
   canDelete?: boolean;
+  onViewHistory?: (item: Asset | Stock) => void;
 }
 
 const formatCurrency = (amount: number) => {
@@ -45,6 +46,7 @@ export function ItemTable({
   onAdjustItem,
   onDeleteItem,
   canDelete = false,
+  onViewHistory,
 }: ItemTableProps) {
   return (
     <Card>
@@ -150,6 +152,15 @@ export function ItemTable({
                             <Edit className="w-4 h-4" />
                             Sesuaikan Kuantitas
                           </DropdownMenuItem>
+                          {onViewHistory && (
+                            <DropdownMenuItem
+                              onClick={() => onViewHistory(item)}
+                              className="flex items-center gap-2"
+                            >
+                              <History className="w-4 h-4" />
+                              Lihat History
+                            </DropdownMenuItem>
+                          )}
                           {canDelete && (
                             <DropdownMenuItem
                               onClick={() => onDeleteItem(item)}

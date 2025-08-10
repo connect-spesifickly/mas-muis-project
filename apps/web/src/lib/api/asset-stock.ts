@@ -9,6 +9,7 @@ import type {
   UpdateAssetData,
   UpdateStockData,
   AdjustmentData,
+  AdjustmentHistory,
 } from "@/types/asset-stock";
 
 interface ApiResponse<T> {
@@ -232,6 +233,37 @@ export const assetStockApi = {
       );
       throw new Error(
         apiError.response?.data?.message || "Failed to adjust item"
+      );
+    }
+  },
+
+  // History API
+  getAdjustmentHistory: async (
+    params?: { type?: string; itemId?: string },
+    token?: string
+  ): Promise<AdjustmentHistory[]> => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.type) queryParams.append("type", params.type);
+      if (params?.itemId) queryParams.append("itemId", params.itemId);
+
+      const response = await api.get<ApiResponse<AdjustmentHistory[]>>(
+        `/asset-stock/adjustments/history?${queryParams.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data.data;
+    } catch (error) {
+      const apiError = error as { response?: { data: ApiError } };
+      console.error(
+        "API Error - getAdjustmentHistory:",
+        apiError.response?.data || error
+      );
+      throw new Error(
+        apiError.response?.data?.message || "Failed to fetch adjustment history"
       );
     }
   },

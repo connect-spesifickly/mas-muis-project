@@ -56,5 +56,12 @@ export const assetStockRouter = () => {
     AssetStockController.createAdjustment
   );
 
+  // History routes
+  router.get(
+    "/adjustments/history",
+    requireRole(["OWNER", "ACCOUNTANT"]),
+    AssetStockController.getAdjustmentHistory
+  );
+
   return router;
 };

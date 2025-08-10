@@ -68,3 +68,21 @@ export interface AdjustmentData {
   reason: string;
   type: "ASSET" | "STOCK";
 }
+
+export interface AdjustmentHistory {
+  id: string;
+  quantityChange: number;
+  reason: string;
+  adjustedAt: string;
+  item: {
+    id: string;
+    name: string;
+    type: "ASSET" | "STOCK";
+    purchasePrice: number;
+  };
+  recordedBy: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}

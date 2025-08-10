@@ -237,6 +237,78 @@ class AssetStockService {
       return updatedItem;
     });
   }
+
+  /**
+   * Mendapatkan history penyesuaian untuk semua item
+   */
+  async getAdjustmentHistory(type?: ItemType) {
+    const adjustments = await prisma.itemAdjustment.findMany({
+      where: {
+        item: {
+          type: type || undefined,
+          deletedAt: null,
+        },
+      },
+      include: {
+        item: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            purchasePrice: true,
+          },
+        },
+        recordedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        adjustedAt: "desc",
+      },
+    });
+
+    return adjustments;
+  }
+
+  /**
+   * Mendapatkan history penyesuaian untuk item tertentu
+   */
+  async getItemAdjustmentHistory(itemId: string) {
+    const adjustments = await prisma.itemAdjustment.findMany({
+      where: {
+        itemId,
+        item: {
+          deletedAt: null,
+        },
+      },
+      include: {
+        item: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            purchasePrice: true,
+          },
+        },
+        recordedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        adjustedAt: "desc",
+      },
+    });
+
+    return adjustments;
+  }
 }
 
 export default new AssetStockService();
