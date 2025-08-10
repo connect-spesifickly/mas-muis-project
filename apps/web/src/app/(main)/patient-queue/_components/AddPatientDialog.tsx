@@ -257,9 +257,27 @@ export function AddPatientDialog({
           </div>
 
           <div className="space-y-4 pt-4 border-t mt-4">
-            <h3 className="text-lg font-semibold">
-              Perangkat ({fields.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                Perangkat ({fields.length})
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  append({
+                    deviceType: "",
+                    problemDescription: "",
+                    accessoriesLeft: "",
+                  })
+                }
+                className="flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Tambah Perangkat
+              </Button>
+            </div>
             {fields.map((field, index) => (
               <div
                 key={field.id}
@@ -327,29 +345,29 @@ export function AddPatientDialog({
                 </div>
               </div>
             ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                append({
-                  deviceType: "",
-                  problemDescription: "",
-                  accessoriesLeft: "",
-                })
-              }
-              className="w-full"
-            >
-              Tambah Perangkat Lain
-            </Button>
           </div>
 
-          <DialogFooter className="mt-4">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Simpan Antrian
-            </Button>
+          <DialogFooter className="mt-6 pt-4 border-t">
+            <div className="flex gap-3 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="flex-1"
+              >
+                {form.formState.isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Simpan Antrian
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
