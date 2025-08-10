@@ -7,6 +7,13 @@ import { useCustomers } from "@/hooks/use-customer";
 import { Transaction } from "@/types/transaction";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertTriangle,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 
 // Import components
 import {
@@ -17,6 +24,255 @@ import {
   handleCreateTransaction as createTransactionHandler,
   handleUpdateTransaction as updateTransactionHandler,
 } from "./_components";
+
+// Skeleton Components
+const SkeletonFilterCard = () => (
+  <Card>
+    <CardHeader>
+      <Skeleton className="h-6 w-32" />
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col space-y-2">
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <Skeleton className="h-4 w-14" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SkeletonTableHeader = () => (
+  <div className="bg-gray-50 border-b px-6 py-4">
+    <div className="grid grid-cols-8 gap-4">
+      <Skeleton className="h-4 w-12" />
+      <Skeleton className="h-4 w-16" />
+      <Skeleton className="h-4 w-20" />
+      <Skeleton className="h-4 w-14" />
+      <Skeleton className="h-4 w-18" />
+      <Skeleton className="h-4 w-16" />
+      <Skeleton className="h-4 w-20" />
+      <Skeleton className="h-4 w-14" />
+    </div>
+  </div>
+);
+
+const SkeletonTableRow = ({
+  showBalance = false,
+}: {
+  showBalance?: boolean;
+}) => (
+  <div className="border-b px-6 py-4">
+    <div className="grid grid-cols-8 gap-4 items-center">
+      <Skeleton className="h-4 w-16" />
+      <Skeleton className="h-4 w-24" />
+      <div className="space-y-1">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-3 w-16" />
+      </div>
+      <Skeleton className="h-6 w-16 rounded-full" />
+      <div className="space-y-1">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-3 w-20" />
+      </div>
+      <Skeleton className="h-4 w-20" />
+      {showBalance && <Skeleton className="h-4 w-24" />}
+      <div className="flex space-x-2">
+        <Skeleton className="h-8 w-8 rounded" />
+        <Skeleton className="h-8 w-8 rounded" />
+      </div>
+    </div>
+  </div>
+);
+
+const SkeletonTransactionTable = ({
+  showBalance = false,
+}: {
+  showBalance?: boolean;
+}) => (
+  <Card>
+    <CardHeader>
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-10 w-32" />
+      </div>
+    </CardHeader>
+    <CardContent className="p-0">
+      <div className="border rounded-lg overflow-hidden">
+        <SkeletonTableHeader />
+        <div className="divide-y">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <SkeletonTableRow key={index} showBalance={showBalance} />
+          ))}
+        </div>
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex items-center justify-between px-6 py-4 border-t">
+        <Skeleton className="h-4 w-32" />
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded" />
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SkeletonStatsCards = () => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <TrendingUp className="h-6 w-6 text-green-600" />
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-red-100 rounded-lg">
+            <TrendingDown className="h-6 w-6 text-red-600" />
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <DollarSign className="h-6 w-6 text-blue-600" />
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const LoadingSkeleton = ({
+  showBalance = false,
+}: {
+  showBalance?: boolean;
+}) => (
+  <div className="w-full h-full relative">
+    {/* Header Skeleton */}
+    <div className="sticky top-16 z-40 bg-background border-b">
+      <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+        <div className="flex items-center justify-between flex-1">
+          <Skeleton className="h-8 w-40 md:ml-5" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex flex-col w-full">
+      <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+        {/* Stats Cards Skeleton */}
+        <SkeletonStatsCards />
+
+        {/* Filter Card Skeleton */}
+        <SkeletonFilterCard />
+
+        {/* Transaction Table Skeleton */}
+        <SkeletonTransactionTable showBalance={showBalance} />
+      </div>
+    </div>
+  </div>
+);
+
+const EmptyState = () => (
+  <div className="text-center py-16 space-y-4">
+    <div className="flex items-center justify-center">
+      <DollarSign className="h-16 w-16 text-gray-400" />
+    </div>
+    <div className="space-y-2">
+      <h3 className="text-lg font-medium text-gray-900">Belum Ada Transaksi</h3>
+      <p className="text-sm text-gray-500 max-w-md mx-auto">
+        Belum ada transaksi kas untuk periode ini. Tambahkan transaksi pertama
+        Anda untuk memulai pencatatan keuangan.
+      </p>
+    </div>
+  </div>
+);
+
+const ErrorState = ({ onRetry }: { onRetry?: () => void }) => (
+  <div className="w-full h-full relative">
+    <div className="sticky top-16 z-40 bg-background border-b">
+      <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+        <div className="flex items-center justify-between flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
+            Transaksi Kas
+          </h1>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex flex-col w-full">
+      <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center">
+                <AlertTriangle className="h-12 w-12 text-red-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-red-800">
+                  Terjadi Kesalahan
+                </h3>
+                <p className="text-sm text-red-600">
+                  Gagal memuat data transaksi kas. Silakan coba lagi atau
+                  hubungi administrator.
+                </p>
+              </div>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  Coba Lagi
+                </button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </div>
+);
 
 export default function TransaksiKas() {
   const { data: session, status } = useSession();
@@ -41,25 +297,25 @@ export default function TransaksiKas() {
   });
 
   // Get customers for dropdown
-  const { customers: customerList } = useCustomers({
-    page: 1,
-    limit: 100,
-  });
-
-  // Format transactions for display
-  const displayTransactions = transactions.map((transaction) =>
-    formatTransactionForDisplay(transaction, customerList)
+  const { customers: customerList, isLoading: customersLoading } = useCustomers(
+    {
+      page: 1,
+      limit: 100,
+    }
   );
 
-  // Check if user is authenticated
-  if (status === "loading") {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+  // Format transactions for display
+  const displayTransactions =
+    transactions?.map((transaction) =>
+      formatTransactionForDisplay(transaction, customerList || [])
+    ) || [];
+
+  // Show main loading skeleton during initial load
+  if (status === "loading" || (isLoading && !transactions)) {
+    return <LoadingSkeleton showBalance={session?.role === "OWNER"} />;
   }
 
+  // Check if user is authenticated
   if (status === "unauthenticated") {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -92,52 +348,7 @@ export default function TransaksiKas() {
 
   // Show error if API is not available
   if (error) {
-    return (
-      <div className="w-full h-full relative">
-        <div className="sticky top-16 z-40 bg-background border-b">
-          <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
-            <div className="flex items-center justify-between flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold md:px-5 font-[stencil]">
-                Transaksi Kas
-              </h1>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col w-full">
-          <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
-            <div className="border rounded-lg p-6 bg-red-50 border-red-200">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    Terjadi Kesalahan
-                  </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>
-                      Gagal memuat data transaksi kas. Silakan coba lagi atau
-                      hubungi administrator.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState />;
   }
 
   // Handler functions
@@ -146,9 +357,13 @@ export default function TransaksiKas() {
   };
 
   const handleCreateTransaction = async (data: Partial<Transaction>) => {
-    await createTransactionHandler(data, customerList, async (cleanData) => {
-      await createTransaction(cleanData);
-    });
+    await createTransactionHandler(
+      data,
+      customerList || [],
+      async (cleanData) => {
+        await createTransaction(cleanData);
+      }
+    );
   };
 
   const handleUpdateTransaction = async (
@@ -158,7 +373,7 @@ export default function TransaksiKas() {
     await updateTransactionHandler(
       id,
       data,
-      customerList,
+      customerList || [],
       async (id, cleanData) => {
         await updateTransaction(id, cleanData);
       }
@@ -168,8 +383,6 @@ export default function TransaksiKas() {
   const handleDeleteTransaction = async (id: string) => {
     await deleteTransaction(id);
   };
-
-  if (isLoading) return <div className="p-6">Loading...</div>;
 
   return (
     <div className="w-full h-full relative">
@@ -181,7 +394,14 @@ export default function TransaksiKas() {
             </h1>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-sm">
-                {filters.month}/{filters.year}
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  `${filters.month}/${filters.year}`
+                )}
               </Badge>
             </div>
           </div>
@@ -196,12 +416,31 @@ export default function TransaksiKas() {
               <CardTitle className="text-lg">Filter Periode</CardTitle>
             </CardHeader>
             <CardContent>
-              <TransactionFilters
-                filters={filters}
-                onFiltersChange={handleFilterChange}
-                onExportClick={() => setIsExportModalOpen(true)}
-                isExportDisabled={isLoading || !transactions?.length}
-              />
+              {isLoading ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-4 items-end">
+                    <div className="flex flex-col space-y-2">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-10 w-32" />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Skeleton className="h-4 w-14" />
+                      <Skeleton className="h-10 w-24" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-10 w-20" />
+                      <Skeleton className="h-10 w-24" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <TransactionFilters
+                  filters={filters}
+                  onFiltersChange={handleFilterChange}
+                  onExportClick={() => setIsExportModalOpen(true)}
+                  isExportDisabled={isLoading || !transactions?.length}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -216,16 +455,38 @@ export default function TransaksiKas() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <TransactionTable
-                transactions={transactions}
-                customerList={customerList}
-                displayTransactions={displayTransactions}
-                loading={isLoading}
-                showRunningBalance={session?.role === "OWNER"}
-                onAdd={handleCreateTransaction}
-                onUpdate={handleUpdateTransaction}
-                onDelete={handleDeleteTransaction}
-              />
+              {isLoading ? (
+                <div className="space-y-4 p-6">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <SkeletonTableHeader />
+                    <div className="divide-y">
+                      {Array.from({ length: 8 }).map((_, index) => (
+                        <SkeletonTableRow
+                          key={index}
+                          showBalance={session?.role === "OWNER"}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : !transactions?.length ? (
+                <EmptyState />
+              ) : (
+                <TransactionTable
+                  transactions={transactions}
+                  customerList={customerList || []}
+                  displayTransactions={displayTransactions}
+                  loading={isLoading}
+                  showRunningBalance={session?.role === "OWNER"}
+                  onAdd={handleCreateTransaction}
+                  onUpdate={handleUpdateTransaction}
+                  onDelete={handleDeleteTransaction}
+                />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -235,8 +496,8 @@ export default function TransaksiKas() {
       <TransactionExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        transactions={transactions}
-        customers={customerList}
+        transactions={transactions || []}
+        customers={customerList || []}
       />
     </div>
   );

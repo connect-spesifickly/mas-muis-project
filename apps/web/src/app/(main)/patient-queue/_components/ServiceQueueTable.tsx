@@ -46,7 +46,7 @@ interface ServiceQueueTableProps {
 
 const statusLabels: Record<ServiceStatus, string> = {
   PENDING: "Tertunda",
-  CONFIRMATIONPENDING: "Menunggu Konfirmasi",
+  CONFIRMATION: "Menunggu Konfirmasi",
   IN_PROGRESS: "Dalam Proses",
   COMPLETED: "Selesai",
   RETURNED_TO_CUSTOMER: "Dikembalikan ke Pelanggan",

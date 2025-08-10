@@ -8,7 +8,7 @@ import {
   ItemTable,
   AdjustmentModal,
   AddItemModal,
-  AdjustmentHistoryModal,
+  AdjustmentHistoryModal, // Import this component like in code 1
 } from "./_components";
 import {
   Asset,
@@ -20,7 +20,117 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
+
+// Skeleton Components
+const TableSkeleton = () => {
+  return (
+    <div className="border rounded-lg">
+      {/* Table Header */}
+      <div className="border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+          <Skeleton className="h-6 w-32" />
+        </div>
+      </div>
+
+      {/* Table Rows */}
+      <div className="divide-y">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-64" />
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-8 w-8" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const HeaderSkeleton = () => {
+  return (
+    <div className="sticky top-16 z-40 bg-background border-b">
+      <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+        <div className="flex items-center justify-between flex-1">
+          <Skeleton className="h-8 w-32 md:ml-5" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-36" />
+            <Skeleton className="h-6 w-28" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SectionHeaderSkeleton = () => {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-5 w-5 rounded" />
+        <Skeleton className="h-6 w-16" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-28" />
+      </div>
+    </div>
+  );
+};
+
+const SearchSkeleton = () => {
+  return (
+    <div className="relative">
+      <Skeleton className="h-10 w-full rounded-md" />
+    </div>
+  );
+};
+
+const LoadingSkeleton = () => {
+  return (
+    <div className="w-full h-full relative">
+      <HeaderSkeleton />
+
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Asset Section Skeleton */}
+            <div className="space-y-4">
+              <SectionHeaderSkeleton />
+              <SearchSkeleton />
+              <TableSkeleton />
+            </div>
+
+            {/* Stock Section Skeleton */}
+            <div className="space-y-4">
+              <SectionHeaderSkeleton />
+              <SearchSkeleton />
+              <TableSkeleton />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function AssetStockPage() {
   const { data: session, status } = useSession();
@@ -49,7 +159,7 @@ export default function AssetStockPage() {
 
   const { adjustItem } = useAdjustment();
 
-  // Modal states
+  // Modal states - Use the same structure as code 1
   const [adjustmentModal, setAdjustmentModal] = useState({
     isOpen: false,
     item: null as Asset | Stock | null,
@@ -61,6 +171,7 @@ export default function AssetStockPage() {
     type: null as "ASSET" | "STOCK" | null,
   });
 
+  // Use historyModal instead of exportDialog - same as code 1
   const [historyModal, setHistoryModal] = useState({
     isOpen: false,
     type: null as "ASSET" | "STOCK" | null,
@@ -70,11 +181,7 @@ export default function AssetStockPage() {
 
   // Check if user is authenticated
   if (status === "loading") {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (status === "unauthenticated") {
@@ -131,6 +238,11 @@ export default function AssetStockPage() {
     );
   }
 
+  // Show loading skeleton while data is being fetched
+  if (assetsLoading || stocksLoading) {
+    return <LoadingSkeleton />;
+  }
+
   const handleAddItem = (type: "ASSET" | "STOCK") => {
     setAddItemModal({ isOpen: true, type });
   };
@@ -139,6 +251,7 @@ export default function AssetStockPage() {
     setAddItemModal({ isOpen: false, type: null });
   };
 
+  // Use the same history modal handlers as code 1
   const handleOpenHistoryModal = (
     type?: "ASSET" | "STOCK",
     itemId?: string,
@@ -253,6 +366,7 @@ export default function AssetStockPage() {
     }
   };
 
+  // Use the same view history handler as code 1
   const handleViewItemHistory = (item: Asset | Stock) => {
     handleOpenHistoryModal(item.type, item.id, item.name);
   };
@@ -425,7 +539,7 @@ export default function AssetStockPage() {
                 icon={HardDrive}
                 total={assetsTotal}
                 type="ASSET"
-                loading={assetsLoading}
+                loading={false} // We handle loading at page level now
                 onAdjustItem={handleAdjustItem}
                 onDeleteItem={handleDeleteItem}
                 canDelete={session?.role === "OWNER"}
@@ -477,7 +591,7 @@ export default function AssetStockPage() {
                 icon={Package}
                 total={stocksTotal}
                 type="STOCK"
-                loading={stocksLoading}
+                loading={false} // We handle loading at page level now
                 onAdjustItem={handleAdjustItem}
                 onDeleteItem={handleDeleteItem}
                 canDelete={session?.role === "OWNER"}
@@ -505,7 +619,7 @@ export default function AssetStockPage() {
         onAdjust={handleAdjustment}
       />
 
-      {/* History Modal */}
+      {/* History Modal - Use the same component as code 1 */}
       <AdjustmentHistoryModal
         isOpen={historyModal.isOpen}
         type={historyModal.type || undefined}

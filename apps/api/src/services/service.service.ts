@@ -37,6 +37,8 @@ class ServiceService {
               id: true,
               deviceType: true,
               status: true,
+              problemDescription: true,
+              accessoriesLeft: true,
             },
           },
         },

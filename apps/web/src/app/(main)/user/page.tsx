@@ -7,6 +7,7 @@ import { User, CreateUserData } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -242,6 +243,105 @@ function RestoreUserModal({
   );
 }
 
+// Skeleton Components
+function UserCardSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="w-10 h-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-48" />
+              <div className="flex items-center space-x-2 mt-1">
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="text-right space-y-1">
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UserTableSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: count }).map((_, index) => (
+        <UserCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
+function HeaderSkeleton() {
+  return (
+    <div className="sticky top-16 z-40 bg-background border-b">
+      <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+        <div className="flex items-center justify-between flex-1">
+          <Skeleton className="h-8 w-48" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-6 w-16" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SearchCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-64" />
+      </CardHeader>
+      <CardContent>
+        <div className="relative">
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UserListCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-80" />
+      </CardHeader>
+      <CardContent>
+        <UserTableSkeleton />
+      </CardContent>
+    </Card>
+  );
+}
+
+function FullPageSkeleton() {
+  return (
+    <div className="w-full h-full relative">
+      <HeaderSkeleton />
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          <SearchCardSkeleton />
+          <UserListCardSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UserTable({
   users,
   onDelete,
@@ -338,7 +438,7 @@ function UserTable({
 }
 
 export default function UserManagement() {
-  const { user: currentUser } = useUser();
+  const { user: currentUser, loading: userLoading } = useUser();
   const {
     users,
     deletedUsers,
@@ -356,6 +456,11 @@ export default function UserManagement() {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showDeleted, setShowDeleted] = useState(false);
+
+  // Show full page skeleton when checking user authentication
+  if (userLoading) {
+    return <FullPageSkeleton />;
+  }
 
   // Check if current user is OWNER
   if (currentUser?.role !== "OWNER") {
@@ -417,8 +522,9 @@ export default function UserManagement() {
     }
   };
 
-  if (loading && users.length === 0) {
-    return <div className="p-6">Loading...</div>;
+  // Show full page skeleton on initial load
+  if (loading && users.length === 0 && !showDeleted) {
+    return <FullPageSkeleton />;
   }
 
   return (
@@ -430,15 +536,24 @@ export default function UserManagement() {
               User Management
             </h1>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-sm">
-                {showDeleted ? deletedUsers.length : users.length} Users
-              </Badge>
+              {loading ? (
+                <Skeleton className="h-6 w-16" />
+              ) : (
+                <Badge variant="secondary" className="text-sm">
+                  {showDeleted ? deletedUsers.length : users.length} Users
+                </Badge>
+              )}
               <Button
                 variant={showDeleted ? "default" : "outline"}
                 size="sm"
                 onClick={handleToggleDeleted}
+                disabled={loading && showDeleted && deletedUsers.length === 0}
               >
-                {showDeleted ? "Show Active" : "Show Deleted"}
+                {loading && showDeleted && deletedUsers.length === 0
+                  ? "Loading..."
+                  : showDeleted
+                    ? "Show Active"
+                    : "Show Deleted"}
               </Button>
               <Button size="sm" onClick={() => setShowCreateModal(true)}>
                 <UserPlus className="w-4 h-4 mr-2" />
@@ -469,6 +584,7 @@ export default function UserManagement() {
                     setFilters({ ...filters, search: e.target.value })
                   }
                   className="pl-10"
+                  disabled={loading}
                 />
               </div>
             </CardContent>
@@ -488,21 +604,9 @@ export default function UserManagement() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Card key={i}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-muted rounded animate-pulse" />
-                            <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <UserTableSkeleton
+                  count={showDeleted && deletedUsers.length === 0 ? 3 : 5}
+                />
               ) : (
                 <UserTable
                   users={showDeleted ? deletedUsers : users}

@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
 import { reportApi } from "@/lib/api/report";
-import React from "react"; // Added missing import
+import React from "react";
 
 // Types untuk Financial Report
 export interface MonthlySummary {
@@ -93,7 +93,7 @@ const swrConfig = {
   dedupingInterval: 5000, // Prevent duplicate requests within 5 seconds
 };
 
-// Hook untuk Financial Report
+// Hook untuk Financial Report dengan loading states
 export function useFinancialReportData(
   month: number,
   year: number,
@@ -111,7 +111,11 @@ export function useFinancialReportData(
     }
   }, [session, status, token]);
 
-  const { data: monthlySummaryResponse, error: monthlySummaryError } = useSWR(
+  const {
+    data: monthlySummaryResponse,
+    error: monthlySummaryError,
+    isLoading: isMonthlySummaryLoading,
+  } = useSWR(
     status === "authenticated" ? `monthly-summary-${month}-${year}` : null,
     status === "authenticated"
       ? () => reportApi.getMonthlySummary(month, year, token)
@@ -119,7 +123,11 @@ export function useFinancialReportData(
     swrConfig
   );
 
-  const { data: cashPositionResponse, error: cashPositionError } = useSWR(
+  const {
+    data: cashPositionResponse,
+    error: cashPositionError,
+    isLoading: isCashPositionLoading,
+  } = useSWR(
     status === "authenticated" ? `cash-position-${month}-${year}` : null,
     status === "authenticated"
       ? () => reportApi.getCashPosition(month, year, token)
@@ -127,16 +135,23 @@ export function useFinancialReportData(
     swrConfig
   );
 
-  const { data: companyValuationResponse, error: companyValuationError } =
-    useSWR(
-      status === "authenticated" ? `company-valuation-${valYear}` : null,
-      status === "authenticated"
-        ? () => reportApi.getCompanyValuation(valYear, token)
-        : null,
-      swrConfig
-    );
+  const {
+    data: companyValuationResponse,
+    error: companyValuationError,
+    isLoading: isCompanyValuationLoading,
+  } = useSWR(
+    status === "authenticated" ? `company-valuation-${valYear}` : null,
+    status === "authenticated"
+      ? () => reportApi.getCompanyValuation(valYear, token)
+      : null,
+    swrConfig
+  );
 
-  const { data: yearlyGraphDataResponse, error: yearlyGraphDataError } = useSWR(
+  const {
+    data: yearlyGraphDataResponse,
+    error: yearlyGraphDataError,
+    isLoading: isYearlyGraphDataLoading,
+  } = useSWR(
     status === "authenticated" ? `yearly-graph-data-${valYear}` : null,
     status === "authenticated"
       ? () => reportApi.getYearlyGraphData(token)
@@ -144,7 +159,11 @@ export function useFinancialReportData(
     swrConfig
   );
 
-  const { data: monthlyOmsetResponse, error: monthlyOmsetError } = useSWR(
+  const {
+    data: monthlyOmsetResponse,
+    error: monthlyOmsetError,
+    isLoading: isMonthlyOmsetLoading,
+  } = useSWR(
     status === "authenticated" ? `monthly-omset-${year}` : null,
     status === "authenticated"
       ? () => reportApi.getMonthlyOmset(year, token)
@@ -159,6 +178,25 @@ export function useFinancialReportData(
     companyValuationError ||
     yearlyGraphDataError ||
     monthlyOmsetError;
+
+  // Check if any data is still loading
+  const isLoading =
+    status === "loading" ||
+    isMonthlySummaryLoading ||
+    isCashPositionLoading ||
+    isCompanyValuationLoading ||
+    isYearlyGraphDataLoading ||
+    isMonthlyOmsetLoading;
+
+  // Individual loading states for granular control
+  const loadingStates = {
+    session: status === "loading",
+    monthlySummary: isMonthlySummaryLoading,
+    cashPosition: isCashPositionLoading,
+    companyValuation: isCompanyValuationLoading,
+    yearlyGraphData: isYearlyGraphDataLoading,
+    monthlyOmset: isMonthlyOmsetLoading,
+  };
 
   // Enhanced error object with better context
   const enhancedError = error
@@ -220,11 +258,22 @@ export function useFinancialReportData(
     extractData<MonthlyOmsetData[]>(monthlyOmsetResponse) || [];
 
   return {
+    // Data
     monthlySummary,
     cashPosition,
     companyValuation,
     yearlyGraphData,
     monthlyOmset,
+
+    // Loading states
+    isLoading,
+    loadingStates,
+
+    // Error handling
     error: enhancedError,
+
+    // Session info
+    session,
+    sessionStatus: status,
   };
 }

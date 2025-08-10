@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { useFinancialReportData } from "@/hooks/use-report";
 import {
   CashPositionCard,
@@ -15,11 +14,237 @@ import {
 } from "./_components";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, BarChart3, RefreshCw, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Skeleton Components
+const SkeletonCard = ({ children }: { children?: React.ReactNode }) => (
+  <Card className="h-full">
+    <CardHeader className="pb-3">
+      <Skeleton className="h-5 w-32 mb-2" />
+      <Skeleton className="h-3 w-48" />
+    </CardHeader>
+    <CardContent className="pt-0">
+      {children || (
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const SkeletonFilterCard = () => (
+  <Card>
+    <CardHeader>
+      <Skeleton className="h-6 w-28" />
+    </CardHeader>
+    <CardContent>
+      <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col space-y-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="flex flex-col space-y-2">
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SkeletonChartCard = ({ title }: { title: string }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        {title.includes("Omset") ? (
+          <BarChart3 className="w-5 h-5 text-blue-600" />
+        ) : (
+          <TrendingUp className="w-5 h-5 text-green-600" />
+        )}
+        <Skeleton className="h-6 w-48" />
+      </CardTitle>
+      <Skeleton className="h-4 w-64" />
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-4">
+        <Skeleton className="h-64 w-full rounded" />
+        <div className="flex justify-center space-x-4">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-18" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SkeletonCashPositionCard = () => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+      </div>
+      <div className="p-4 bg-green-50 rounded-lg">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-6 w-36" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SkeletonMonthlySummaryCard = () => (
+  <div className="space-y-3">
+    <div className="p-3 bg-blue-50 rounded-lg">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-4 w-12" />
+        <Skeleton className="h-6 w-28" />
+      </div>
+    </div>
+    <div className="p-3 bg-red-50 rounded-lg">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-6 w-32" />
+      </div>
+    </div>
+    <div className="p-3 bg-orange-50 rounded-lg">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-4 w-8" />
+        <Skeleton className="h-6 w-24" />
+      </div>
+    </div>
+    <div className="p-3 bg-green-50 rounded-lg">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-4 w-18" />
+        <Skeleton className="h-6 w-36" />
+      </div>
+    </div>
+  </div>
+);
+
+const SkeletonCompanyValuationCard = () => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="p-3 bg-blue-50 rounded-lg">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-6 w-24" />
+        </div>
+      </div>
+      <div className="p-3 bg-green-50 rounded-lg">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-28" />
+        </div>
+      </div>
+      <div className="p-3 bg-yellow-50 rounded-lg">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-6 w-20" />
+        </div>
+      </div>
+      <div className="p-3 bg-purple-50 rounded-lg">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-18" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+      </div>
+    </div>
+    <div className="pt-4 border-t">
+      <div className="p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-40" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const LoadingSkeleton = () => (
+  <div className="w-full h-full relative">
+    {/* Header Skeleton */}
+    <div className="sticky top-16 z-40 bg-background border-b">
+      <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+        <div className="flex items-center justify-between flex-1">
+          <Skeleton className="h-8 w-48 md:ml-5" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex flex-col w-full">
+      <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+        {/* Main Content Skeleton - Two Column Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6">
+            {/* Filter Skeleton */}
+            <SkeletonFilterCard />
+
+            {/* Posisi Kas & Detail Rincian Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SkeletonCard>
+                <SkeletonCashPositionCard />
+              </SkeletonCard>
+              <SkeletonCard>
+                <SkeletonMonthlySummaryCard />
+              </SkeletonCard>
+            </div>
+
+            {/* Monthly Chart Skeleton */}
+            <SkeletonChartCard title="Grafik Omset Bulanan" />
+          </div>
+
+          {/* RIGHT COLUMN */}
+          <div className="space-y-6">
+            {/* Year Filter Skeleton */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col space-y-2">
+                  <Skeleton className="h-4 w-14" />
+                  <Skeleton className="h-10 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Company Valuation Skeleton */}
+            <SkeletonCard>
+              <SkeletonCompanyValuationCard />
+            </SkeletonCard>
+
+            {/* Yearly Chart Skeleton */}
+            <SkeletonChartCard title="Grafik Valuasi Tahunan" />
+          </div>
+        </div>
+
+        {/* Footer Skeleton */}
+        <div className="mt-8 p-6 border-t">
+          <div className="text-center space-y-2">
+            <Skeleton className="h-4 w-64 mx-auto" />
+            <Skeleton className="h-3 w-48 mx-auto" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function FinancialReportPage() {
-  const { data: session, status } = useSession();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [valuationYear, setValuationYear] = useState(new Date().getFullYear());
@@ -30,19 +255,20 @@ export default function FinancialReportPage() {
     companyValuation,
     yearlyGraphData,
     monthlyOmset,
+    isLoading,
+    loadingStates,
     error,
+    session,
+    sessionStatus,
   } = useFinancialReportData(selectedMonth, selectedYear, valuationYear);
 
-  // Check if user is authenticated
-  if (status === "loading") {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+  // Show loading skeleton during session loading or data loading
+  if (isLoading) {
+    return <LoadingSkeleton />;
   }
 
-  if (status === "unauthenticated") {
+  // Check if user is authenticated
+  if (sessionStatus === "unauthenticated") {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -194,7 +420,11 @@ export default function FinancialReportPage() {
                     <p className="text-xs text-muted-foreground">Saldo Kas</p>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <CashPositionCard cashPosition={cashPosition} />
+                    {loadingStates.cashPosition ? (
+                      <SkeletonCashPositionCard />
+                    ) : (
+                      <CashPositionCard cashPosition={cashPosition} />
+                    )}
                   </CardContent>
                 </Card>
 
@@ -209,7 +439,11 @@ export default function FinancialReportPage() {
                     </p>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <MonthlySummaryCard monthlySummary={monthlySummary} />
+                    {loadingStates.monthlySummary ? (
+                      <SkeletonMonthlySummaryCard />
+                    ) : (
+                      <MonthlySummaryCard monthlySummary={monthlySummary} />
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -226,10 +460,21 @@ export default function FinancialReportPage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <MonthlyCashChart
-                    monthlyOmset={monthlyOmset}
-                    selectedYear={selectedYear}
-                  />
+                  {loadingStates.monthlyOmset ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-64 w-full rounded" />
+                      <div className="flex justify-center space-x-4">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-18" />
+                      </div>
+                    </div>
+                  ) : (
+                    <MonthlyCashChart
+                      monthlyOmset={monthlyOmset}
+                      selectedYear={selectedYear}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -252,7 +497,11 @@ export default function FinancialReportPage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <CompanyValuationCard companyValuation={companyValuation} />
+                  {loadingStates.companyValuation ? (
+                    <SkeletonCompanyValuationCard />
+                  ) : (
+                    <CompanyValuationCard companyValuation={companyValuation} />
+                  )}
                 </CardContent>
               </Card>
 

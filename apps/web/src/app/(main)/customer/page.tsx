@@ -40,6 +40,7 @@ interface CustomerReportData {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -504,6 +505,117 @@ function ExportExcelModal({
   );
 }
 
+// Customer Loading Skeleton Component
+function CustomerSkeleton() {
+  return (
+    <div className="w-full h-full relative">
+      {/* Header Skeleton */}
+      <div className="sticky top-16 z-40 bg-background border-b">
+        <div className="flex h-16 shrink-0 items-center gap-2 md:px-1 px-2">
+          <div className="flex items-center justify-between flex-1">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-20" />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col w-full">
+        <div className="flex flex-1 flex-col gap-4 p-2 md:p-6">
+          {/* Customer Table Skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-4 w-80" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-9 w-36" />
+                  <Skeleton className="h-9 w-32" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {/* Table Header */}
+              <div className="border-b">
+                <div className="px-6 py-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <Skeleton className="h-9 w-64" /> {/* Search bar */}
+                    <Skeleton className="h-9 w-24" /> {/* Add button */}
+                  </div>
+
+                  {/* Table Headers */}
+                  <div className="grid grid-cols-6 gap-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Rows */}
+              <div className="divide-y">
+                {Array.from({ length: 10 }).map((_, index) => (
+                  <div key={index} className="px-6 py-4">
+                    <div className="grid grid-cols-6 gap-4 items-center">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                      <Skeleton className="h-4 w-28" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/4" />
+                      </div>
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-4 w-20" />
+                      <div className="flex items-center gap-1">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Table Footer */}
+              <div className="border-t px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-48" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pagination Skeleton */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-center gap-2">
+                <Skeleton className="h-9 w-20" />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-9" />
+                ))}
+                <Skeleton className="h-9 w-16" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const CUSTOMER_COLUMNS = [
   {
     key: "name",
@@ -718,8 +830,10 @@ export default function DataCustomer() {
     }
   };
 
-  if (isLoading && customers.length === 0)
-    return <div className="p-6">Loading...</div>;
+  // Show skeleton loading when loading and no customers data
+  if (isLoading && customers.length === 0) {
+    return <CustomerSkeleton />;
+  }
 
   if (error)
     return <div className="p-6 text-red-500">Error: {error.message}</div>;
