@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2, X } from "lucide-react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -34,7 +34,7 @@ const deviceSchema = yup.object().shape({
 });
 
 const formSchema = yup.object().shape({
-  date: yup.date().required(),
+  date: yup.string().required("Tanggal harus diisi."),
   customerId: yup.string().required("Pilih pelanggan."),
   devices: yup
     .array()
@@ -64,7 +64,7 @@ export function AddPatientDialog({
   const form = useForm<FormData>({
     resolver: yupResolver(formSchema),
     defaultValues: {
-      date: new Date(),
+      date: new Date().toISOString().split("T")[0],
       customerId: "",
       devices: [
         { deviceType: "", problemDescription: "", accessoriesLeft: "" },
@@ -139,7 +139,7 @@ export function AddPatientDialog({
     if (result.success) {
       toast.success("Antrian pasien berhasil ditambahkan.");
       form.reset({
-        date: new Date(),
+        date: new Date().toISOString().split("T")[0],
         customerId: "",
         devices: [
           { deviceType: "", problemDescription: "", accessoriesLeft: "" },
@@ -270,10 +270,10 @@ export function AddPatientDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => remove(index)}
-                  className="absolute top-2 right-2 text-destructive"
+                  className="absolute top-2 right-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
                   disabled={fields.length === 1}
                 >
-                  X
+                  <X className="h-4 w-4" />
                 </Button>
                 <div>
                   <Label htmlFor={`devices.${index}.deviceType`}>
