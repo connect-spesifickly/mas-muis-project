@@ -21,6 +21,7 @@ interface ItemTableProps {
   loading?: boolean;
   onAdjustItem: (item: Asset | Stock) => void;
   onDeleteItem: (item: Asset | Stock) => void;
+  canDelete?: boolean;
 }
 
 const formatCurrency = (amount: number) => {
@@ -43,6 +44,7 @@ export function ItemTable({
   loading = false,
   onAdjustItem,
   onDeleteItem,
+  canDelete = false,
 }: ItemTableProps) {
   return (
     <Card>
@@ -148,13 +150,15 @@ export function ItemTable({
                             <Edit className="w-4 h-4" />
                             Sesuaikan Kuantitas
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDeleteItem(item)}
-                            className="flex items-center gap-2 text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Hapus
-                          </DropdownMenuItem>
+                          {canDelete && (
+                            <DropdownMenuItem
+                              onClick={() => onDeleteItem(item)}
+                              className="flex items-center gap-2 text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Hapus
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

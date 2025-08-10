@@ -23,7 +23,7 @@ export const assetStockRouter = () => {
   );
   router.delete(
     "/assets/:id",
-    requireRole(["OWNER", "ACCOUNTANT"]),
+    requireRole(["OWNER"]),
     AssetStockController.deleteAsset
   );
 
@@ -45,7 +45,7 @@ export const assetStockRouter = () => {
   );
   router.delete(
     "/stocks/:id",
-    requireRole(["OWNER", "ACCOUNTANT"]),
+    requireRole(["OWNER"]),
     AssetStockController.deleteStock
   );
 

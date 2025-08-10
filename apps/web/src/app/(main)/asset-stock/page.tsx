@@ -204,7 +204,18 @@ export default function AssetStockPage() {
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      toast.error("Gagal menghapus item. Silakan coba lagi.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      if (
+        errorMessage.includes("Unauthorized") ||
+        errorMessage.includes("403")
+      ) {
+        toast.error(
+          "Anda tidak memiliki izin untuk menghapus item ini. Hanya OWNER yang dapat menghapus aset dan stok."
+        );
+      } else {
+        toast.error("Gagal menghapus item. Silakan coba lagi.");
+      }
     }
   };
 
@@ -359,6 +370,7 @@ export default function AssetStockPage() {
                 loading={assetsLoading}
                 onAdjustItem={handleAdjustItem}
                 onDeleteItem={handleDeleteItem}
+                canDelete={session?.role === "OWNER"}
               />
             </div>
 
@@ -398,6 +410,7 @@ export default function AssetStockPage() {
                 loading={stocksLoading}
                 onAdjustItem={handleAdjustItem}
                 onDeleteItem={handleDeleteItem}
+                canDelete={session?.role === "OWNER"}
               />
             </div>
           </div>
