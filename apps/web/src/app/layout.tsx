@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "POS System",
-  description: "A modern Point of Sale (POS) System.",
+  title: "Easy Tech ERP",
+  description: "A modern Enterprise Resource Planning (ERP) System.",
 };
 
 export default async function RootLayout({
