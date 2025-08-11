@@ -25,7 +25,7 @@ const userRegisterSchema = () => {
       .min(8, "Password must be at least 8 characters"),
     role: yup
       .string()
-      .oneOf(["ACCOUNTANT", "TECHNICIAN"])
+      .oneOf(["ACCOUNTANT", "TECHNICIAN", "OWNER"])
       .required("Role is required"),
   });
 };
