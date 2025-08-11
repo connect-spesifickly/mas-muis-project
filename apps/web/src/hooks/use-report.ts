@@ -311,24 +311,33 @@ export function useFinancialReportData(
     : null;
 
   // Default values
-  const defaultMonthlySummary: MonthlySummary = {
-    omset: 0,
-    totalPengeluaran: 0,
-    hpp: 0,
-    labaBersih: 0,
-  };
+  const defaultMonthlySummary = React.useMemo<MonthlySummary>(
+    () => ({
+      omset: 0,
+      totalPengeluaran: 0,
+      hpp: 0,
+      labaBersih: 0,
+    }),
+    []
+  );
 
-  const defaultCashPosition: CashPosition = {
-    saldoAwal: 0,
-    saldoAkhir: 0,
-  };
+  const defaultCashPosition = React.useMemo<CashPosition>(
+    () => ({
+      saldoAwal: 0,
+      saldoAkhir: 0,
+    }),
+    []
+  );
 
-  const defaultCompanyValuation: CompanyValuation = {
-    totalKas: 0,
-    totalNilaiAset: 0,
-    totalNilaiStok: 0,
-    totalValuasi: 0,
-  };
+  const defaultCompanyValuation = React.useMemo<CompanyValuation>(
+    () => ({
+      totalKas: 0,
+      totalNilaiAset: 0,
+      totalNilaiStok: 0,
+      totalValuasi: 0,
+    }),
+    []
+  );
 
   // Extract data from responses with error handling
   const monthlySummary = React.useMemo(() => {
@@ -336,20 +345,20 @@ export function useFinancialReportData(
       extractData<MonthlySummary>(monthlySummaryResponse) ||
       defaultMonthlySummary
     );
-  }, [monthlySummaryResponse]);
+  }, [defaultMonthlySummary, monthlySummaryResponse]);
 
   const cashPosition = React.useMemo(() => {
     return (
       extractData<CashPosition>(cashPositionResponse) || defaultCashPosition
     );
-  }, [cashPositionResponse]);
+  }, [cashPositionResponse, defaultCashPosition]);
 
   const companyValuation = React.useMemo(() => {
     return (
       extractData<CompanyValuation>(companyValuationResponse) ||
       defaultCompanyValuation
     );
-  }, [companyValuationResponse]);
+  }, [companyValuationResponse, defaultCompanyValuation]);
 
   const yearlyGraphData = React.useMemo(() => {
     return extractData<YearlyGraphData[]>(yearlyGraphDataResponse) || [];

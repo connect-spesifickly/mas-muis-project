@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { userApi } from "@/lib/api/user";
 import { User, CreateUserData, UserFilters } from "@/types/user";
@@ -41,7 +41,7 @@ export function useUsers() {
     );
   }, [allDeletedUsers, filters.search]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!session?.accessToken) return;
 
     setLoading(true);
@@ -62,7 +62,7 @@ export function useUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, session?.accessToken]);
 
   const fetchDeletedUsers = async () => {
     if (!session?.accessToken) return;
@@ -94,9 +94,9 @@ export function useUsers() {
       setAllUsers((prev) => [...prev, newUser]);
       toast.success("User created successfully");
       return newUser;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating user:", error);
-      toast.error(error.response?.data?.message || "Failed to create user");
+      toast.error("Failed to create user");
       throw error;
     }
   };
@@ -108,9 +108,9 @@ export function useUsers() {
       await userApi.remove(id, session.accessToken);
       setAllUsers((prev) => prev.filter((user) => user.id !== id));
       toast.success("User deleted successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error removing user:", error);
-      toast.error(error.response?.data?.message || "Failed to delete user");
+      toast.error("Failed to delete user");
       throw error;
     }
   };
@@ -122,9 +122,9 @@ export function useUsers() {
       await userApi.restore(id, session.accessToken);
       setAllDeletedUsers((prev) => prev.filter((user) => user.id !== id));
       toast.success("User restored successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error restoring user:", error);
-      toast.error(error.response?.data?.message || "Failed to restore user");
+      toast.error("Failed to restore user");
       throw error;
     }
   };
@@ -133,7 +133,7 @@ export function useUsers() {
   // Tidak fetch ulang saat search berubah
   useEffect(() => {
     fetchUsers();
-  }, [session?.accessToken]); // Remove filters dependency
+  }, [fetchUsers]);
 
   return {
     users, // Ini sudah hasil filtered

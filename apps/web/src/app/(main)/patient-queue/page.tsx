@@ -186,7 +186,7 @@ const EmptyState = () => (
 
 export default function PatientQueuePage() {
   const { data: session, status } = useSession();
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tableLoading, setTableLoading] = useState(false);

@@ -57,13 +57,13 @@ const getStatusBadgeVariant = (status: ServiceStatus) => {
   switch (status) {
     case ServiceStatus.PENDING:
       return "secondary";
-    case ServiceStatus.CONFIRMATIONPENDING:
+    case ServiceStatus.CONFIRMATION:
       return "outline";
     case ServiceStatus.IN_PROGRESS:
       return "default";
     case ServiceStatus.COMPLETED:
     case ServiceStatus.RETURNED_TO_CUSTOMER:
-      return "success";
+      return "secondary";
     case ServiceStatus.CANCELLED:
       return "destructive";
     default:

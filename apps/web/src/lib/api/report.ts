@@ -1,6 +1,13 @@
 import { api } from "@/utils/axios";
 
 // Enhanced retry logic
+interface HttpError {
+  response?: {
+    status?: number;
+    data?: unknown;
+  };
+}
+
 const retryRequest = async <T>(
   requestFn: () => Promise<T>,
   maxRetries = 2,
@@ -9,15 +16,21 @@ const retryRequest = async <T>(
   for (let i = 0; i <= maxRetries; i++) {
     try {
       return await requestFn();
-    } catch (error: any) {
-      // Don't retry on authentication errors
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
-        throw error;
-      }
+    } catch (error: unknown) {
+      const httpError = error as HttpError;
+      const status = httpError.response?.status;
 
-      // Don't retry on client errors (4xx except 401/403)
-      if (error?.response?.status >= 400 && error?.response?.status < 500) {
-        throw error;
+      // Check if we have a valid status code
+      if (typeof status === "number") {
+        // Don't retry on authentication errors
+        if (status === 401 || status === 403) {
+          throw error;
+        }
+
+        // Don't retry on client errors (4xx except 401/403)
+        if (status >= 400 && status < 500) {
+          throw error;
+        }
       }
 
       if (i === maxRetries) {
@@ -32,7 +45,6 @@ const retryRequest = async <T>(
   }
   throw new Error("Max retries exceeded");
 };
-
 export const reportApi = {
   // Financial Report APIs with improved error handling
   getMonthlySummary: async (month: number, year: number, token?: string) => {

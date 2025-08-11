@@ -3,7 +3,6 @@ import type {
   UserListResponse,
   UserResponse,
   CreateUserData,
-  UpdateUserData,
   UserFilters,
 } from "@/types/user";
 

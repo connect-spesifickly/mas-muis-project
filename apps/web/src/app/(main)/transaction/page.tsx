@@ -297,12 +297,10 @@ export default function TransaksiKas() {
   });
 
   // Get customers for dropdown
-  const { customers: customerList, isLoading: customersLoading } = useCustomers(
-    {
-      page: 1,
-      limit: 100,
-    }
-  );
+  const { customers: customerList } = useCustomers({
+    page: 1,
+    limit: 100,
+  });
 
   // Format transactions for display
   const displayTransactions =
