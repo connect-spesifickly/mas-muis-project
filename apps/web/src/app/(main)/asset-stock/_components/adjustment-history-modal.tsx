@@ -84,15 +84,7 @@ export function AdjustmentHistoryModal({
 
     setExporting(true);
     try {
-      // Create workbook and worksheet
-      const workbook = {
-        SheetNames: ["History Penyesuaian"],
-        Sheets: {
-          "History Penyesuaian": {},
-        },
-      };
-
-      // Define headers
+      // Prepare data
       const headers = [
         "Tanggal",
         "Item",
@@ -103,57 +95,47 @@ export function AdjustmentHistoryModal({
         "Email",
       ];
 
-      // Create data array
-      const data = [
-        headers,
-        ...history.map((item) => [
-          formatDate(item.adjustedAt),
-          item.item.name,
-          item.item.type === "ASSET" ? "Aset" : "Stok",
-          item.quantityChange,
-          item.reason,
-          item.recordedBy.name,
-          item.recordedBy.email,
-        ]),
-      ];
+      const excelData = history.map((item) => [
+        formatDate(item.adjustedAt),
+        item.item.name,
+        item.item.type === "ASSET" ? "Aset" : "Stok",
+        item.quantityChange,
+        item.reason,
+        item.recordedBy.name,
+        item.recordedBy.email,
+      ]);
 
-      // Convert to worksheet format
-      const worksheet = {};
-      data.forEach((row, rowIndex) => {
-        row.forEach((cell, colIndex) => {
-          const cellAddress =
-            String.fromCharCode(65 + colIndex) + (rowIndex + 1);
-          worksheet[cellAddress] = { v: cell };
-        });
-      });
+      // Create worksheet using proper method
+      const wsData = [headers, ...excelData];
+      const worksheet = XLSX.utils.aoa_to_sheet(wsData);
 
       // Set column widths
       worksheet["!cols"] = [
-        { wch: 20 }, // Tanggal
-        { wch: 25 }, // Item
-        { wch: 10 }, // Tipe
-        { wch: 15 }, // Perubahan Kuantitas
-        { wch: 30 }, // Alasan
-        { wch: 20 }, // Dilakukan Oleh
-        { wch: 25 }, // Email
+        { wch: 20 },
+        { wch: 25 },
+        { wch: 10 },
+        { wch: 15 },
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 25 },
       ];
 
-      workbook.Sheets["History Penyesuaian"] = worksheet;
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "History Penyesuaian");
 
-      // Convert to binary string
-      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "binary" });
-
-      // Convert binary string to blob
-      const blob = new Blob([s2ab(wbout)], {
+      // Convert to binary string and create blob
+      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      // Download file
+      // Create download link
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
+      link.href = url;
 
-      // Generate filename based on context
+      // Generate filename
       let filename = "history-penyesuaian";
       if (itemId && itemName) {
         filename = `history-${itemName.replace(/[^a-zA-Z0-9]/g, "-")}`;
@@ -162,11 +144,11 @@ export function AdjustmentHistoryModal({
       }
       filename += `-${new Date().toISOString().split("T")[0]}.xlsx`;
 
-      link.setAttribute("download", filename);
-      link.style.visibility = "hidden";
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast.success("File Excel berhasil didownload");
       onClose();
@@ -177,7 +159,6 @@ export function AdjustmentHistoryModal({
       setExporting(false);
     }
   };
-
   // Helper function to convert string to array buffer
   const s2ab = (s: string) => {
     const buf = new ArrayBuffer(s.length);
