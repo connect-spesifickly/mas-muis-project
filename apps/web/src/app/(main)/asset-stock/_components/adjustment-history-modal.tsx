@@ -48,13 +48,7 @@ export function AdjustmentHistoryModal({
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchHistory();
-    }
-  }, [isOpen, type, itemId]);
-
-  const fetchHistory = async () => {
+  const fetchHistory = React.useCallback(async () => {
     if (!session?.accessToken) return;
 
     setLoading(true);
@@ -74,7 +68,13 @@ export function AdjustmentHistoryModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.accessToken, type, itemId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchHistory();
+    }
+  }, [isOpen, fetchHistory]);
 
   const exportToExcel = async () => {
     if (history.length === 0) {
