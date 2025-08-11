@@ -84,16 +84,29 @@ const extractErrorMessage = (error: unknown): string | null => {
   return "An unknown error occurred";
 };
 
-// SWR configuration with retry
+// Improved SWR configuration
 const swrConfig = {
-  errorRetryCount: 3,
-  errorRetryInterval: 1000,
+  errorRetryCount: 2, // Reduce retry count
+  errorRetryInterval: 2000, // Increase retry interval
   revalidateOnFocus: false,
   revalidateOnReconnect: true,
-  dedupingInterval: 5000, // Prevent duplicate requests within 5 seconds
+  dedupingInterval: 10000, // Increase deduping interval
+  shouldRetryOnError: (error: unknown) => {
+    // Don't retry on authentication errors
+    if (
+      error instanceof Error &&
+      (error.message.includes("401") || error.message.includes("403"))
+    ) {
+      return false;
+    }
+    return true;
+  },
+  onError: (error: unknown, key: string) => {
+    console.error(`SWR Error for ${key}:`, error);
+  },
 };
 
-// Hook untuk Financial Report dengan loading states
+// Hook untuk Financial Report dengan loading states - IMPROVED VERSION
 export function useFinancialReportData(
   month: number,
   year: number,
@@ -101,26 +114,60 @@ export function useFinancialReportData(
 ) {
   const { data: session, status } = useSession();
   const token = session?.accessToken;
-  const valYear = valuationYear || year; // Use valuationYear if provided, otherwise use year
+  const valYear = valuationYear || year;
+
+  // Add a state to track if session is ready
+  const [isSessionReady, setIsSessionReady] = React.useState(false);
+
+  // Wait for session to be ready before making API calls
+  React.useEffect(() => {
+    if (status !== "loading") {
+      // Add a small delay to ensure session is fully established
+      const timer = setTimeout(() => {
+        setIsSessionReady(true);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   // Debug token availability
   React.useEffect(() => {
     if (status === "authenticated") {
+      console.log("Report hook - Session ready:", isSessionReady);
       console.log("Report hook - Token available:", !!token);
       console.log("Report hook - Session role:", session?.role);
     }
-  }, [session, status, token]);
+  }, [session, status, token, isSessionReady]);
 
+  // Create a stable condition for API calls
+  const shouldFetchData = React.useMemo(() => {
+    return (
+      status === "authenticated" &&
+      isSessionReady &&
+      !!token &&
+      session?.role === "OWNER"
+    );
+  }, [status, isSessionReady, token, session?.role]);
+
+  // Improved SWR calls with better conditions
   const {
     data: monthlySummaryResponse,
     error: monthlySummaryError,
     isLoading: isMonthlySummaryLoading,
   } = useSWR(
-    status === "authenticated" ? `monthly-summary-${month}-${year}` : null,
-    status === "authenticated"
+    shouldFetchData
+      ? `monthly-summary-${month}-${year}-${token?.slice(-8)}`
+      : null,
+    shouldFetchData
       ? () => reportApi.getMonthlySummary(month, year, token)
       : null,
-    swrConfig
+    {
+      ...swrConfig,
+      onSuccess: () => {
+        console.log("✅ Monthly summary loaded successfully");
+      },
+    }
   );
 
   const {
@@ -128,11 +175,18 @@ export function useFinancialReportData(
     error: cashPositionError,
     isLoading: isCashPositionLoading,
   } = useSWR(
-    status === "authenticated" ? `cash-position-${month}-${year}` : null,
-    status === "authenticated"
+    shouldFetchData
+      ? `cash-position-${month}-${year}-${token?.slice(-8)}`
+      : null,
+    shouldFetchData
       ? () => reportApi.getCashPosition(month, year, token)
       : null,
-    swrConfig
+    {
+      ...swrConfig,
+      onSuccess: () => {
+        console.log("✅ Cash position loaded successfully");
+      },
+    }
   );
 
   const {
@@ -140,11 +194,16 @@ export function useFinancialReportData(
     error: companyValuationError,
     isLoading: isCompanyValuationLoading,
   } = useSWR(
-    status === "authenticated" ? `company-valuation-${valYear}` : null,
-    status === "authenticated"
+    shouldFetchData ? `company-valuation-${valYear}-${token?.slice(-8)}` : null,
+    shouldFetchData
       ? () => reportApi.getCompanyValuation(valYear, token)
       : null,
-    swrConfig
+    {
+      ...swrConfig,
+      onSuccess: () => {
+        console.log("✅ Company valuation loaded successfully");
+      },
+    }
   );
 
   const {
@@ -152,11 +211,14 @@ export function useFinancialReportData(
     error: yearlyGraphDataError,
     isLoading: isYearlyGraphDataLoading,
   } = useSWR(
-    status === "authenticated" ? `yearly-graph-data-${valYear}` : null,
-    status === "authenticated"
-      ? () => reportApi.getYearlyGraphData(token)
-      : null,
-    swrConfig
+    shouldFetchData ? `yearly-graph-data-${token?.slice(-8)}` : null,
+    shouldFetchData ? () => reportApi.getYearlyGraphData(token) : null,
+    {
+      ...swrConfig,
+      onSuccess: () => {
+        console.log("✅ Yearly graph data loaded successfully");
+      },
+    }
   );
 
   const {
@@ -164,14 +226,17 @@ export function useFinancialReportData(
     error: monthlyOmsetError,
     isLoading: isMonthlyOmsetLoading,
   } = useSWR(
-    status === "authenticated" ? `monthly-omset-${year}` : null,
-    status === "authenticated"
-      ? () => reportApi.getMonthlyOmset(year, token)
-      : null,
-    swrConfig
+    shouldFetchData ? `monthly-omset-${year}-${token?.slice(-8)}` : null,
+    shouldFetchData ? () => reportApi.getMonthlyOmset(year, token) : null,
+    {
+      ...swrConfig,
+      onSuccess: () => {
+        console.log("✅ Monthly omset loaded successfully");
+      },
+    }
   );
 
-  // Combine all errors and provide better error messages
+  // Combine all errors
   const error =
     monthlySummaryError ||
     cashPositionError ||
@@ -179,18 +244,40 @@ export function useFinancialReportData(
     yearlyGraphDataError ||
     monthlyOmsetError;
 
-  // Check if any data is still loading
-  const isLoading =
-    status === "loading" ||
-    isMonthlySummaryLoading ||
-    isCashPositionLoading ||
-    isCompanyValuationLoading ||
-    isYearlyGraphDataLoading ||
-    isMonthlyOmsetLoading;
+  // Check if any data is still loading - improved logic
+  const isLoading = React.useMemo(() => {
+    // If session is still loading, show loading
+    if (status === "loading" || !isSessionReady) {
+      return true;
+    }
+
+    // If not authenticated or not OWNER, don't show loading
+    if (status !== "authenticated" || session?.role !== "OWNER") {
+      return false;
+    }
+
+    // If any individual request is loading, show loading
+    return (
+      isMonthlySummaryLoading ||
+      isCashPositionLoading ||
+      isCompanyValuationLoading ||
+      isYearlyGraphDataLoading ||
+      isMonthlyOmsetLoading
+    );
+  }, [
+    status,
+    isSessionReady,
+    session?.role,
+    isMonthlySummaryLoading,
+    isCashPositionLoading,
+    isCompanyValuationLoading,
+    isYearlyGraphDataLoading,
+    isMonthlyOmsetLoading,
+  ]);
 
   // Individual loading states for granular control
   const loadingStates = {
-    session: status === "loading",
+    session: status === "loading" || !isSessionReady,
     monthlySummary: isMonthlySummaryLoading,
     cashPosition: isCashPositionLoading,
     companyValuation: isCompanyValuationLoading,
@@ -244,18 +331,33 @@ export function useFinancialReportData(
   };
 
   // Extract data from responses with error handling
-  const monthlySummary =
-    extractData<MonthlySummary>(monthlySummaryResponse) ||
-    defaultMonthlySummary;
-  const cashPosition =
-    extractData<CashPosition>(cashPositionResponse) || defaultCashPosition;
-  const companyValuation =
-    extractData<CompanyValuation>(companyValuationResponse) ||
-    defaultCompanyValuation;
-  const yearlyGraphData =
-    extractData<YearlyGraphData[]>(yearlyGraphDataResponse) || [];
-  const monthlyOmset =
-    extractData<MonthlyOmsetData[]>(monthlyOmsetResponse) || [];
+  const monthlySummary = React.useMemo(() => {
+    return (
+      extractData<MonthlySummary>(monthlySummaryResponse) ||
+      defaultMonthlySummary
+    );
+  }, [monthlySummaryResponse]);
+
+  const cashPosition = React.useMemo(() => {
+    return (
+      extractData<CashPosition>(cashPositionResponse) || defaultCashPosition
+    );
+  }, [cashPositionResponse]);
+
+  const companyValuation = React.useMemo(() => {
+    return (
+      extractData<CompanyValuation>(companyValuationResponse) ||
+      defaultCompanyValuation
+    );
+  }, [companyValuationResponse]);
+
+  const yearlyGraphData = React.useMemo(() => {
+    return extractData<YearlyGraphData[]>(yearlyGraphDataResponse) || [];
+  }, [yearlyGraphDataResponse]);
+
+  const monthlyOmset = React.useMemo(() => {
+    return extractData<MonthlyOmsetData[]>(monthlyOmsetResponse) || [];
+  }, [monthlyOmsetResponse]);
 
   return {
     // Data
@@ -275,5 +377,9 @@ export function useFinancialReportData(
     // Session info
     session,
     sessionStatus: status,
+
+    // Additional debug info
+    shouldFetchData,
+    isSessionReady,
   };
 }

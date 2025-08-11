@@ -6,9 +6,26 @@ import { mutate } from "swr";
 
 interface SidebarProps {
   activePage: PageType;
+  userRole: string; // Tambah prop userRole
 }
-export function SidebarPage({ activePage }: SidebarProps) {
+
+// Definisi akses role (sama seperti di MainLayout)
+const rolePermissions: Record<string, PageType[]> = {
+  OWNER: [
+    "customer",
+    "patient-queue",
+    "transaction",
+    "financial-report",
+    "asset-stock",
+    "user",
+  ],
+  ACCOUNTANT: ["transaction", "asset-stock"],
+  TECHNICIAN: ["patient-queue", "customer"],
+};
+
+export function SidebarPage({ activePage, userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       const isMdOrLarger = window.innerWidth >= 768;
@@ -24,7 +41,14 @@ export function SidebarPage({ activePage }: SidebarProps) {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-  const sidebarItems: { id: PageType; label: string; icon: string }[] = [
+
+  // Fungsi untuk cek apakah user memiliki akses ke halaman tertentu
+  const hasAccess = (page: PageType): boolean => {
+    if (!userRole) return false;
+    return rolePermissions[userRole]?.includes(page) || false;
+  };
+
+  const allSidebarItems: { id: PageType; label: string; icon: string }[] = [
     { id: "patient-queue", label: "Antrian Pasien", icon: "users" },
     { id: "customer", label: "Customer", icon: "users" },
     { id: "transaction", label: "Transaction", icon: "credit-card" },
@@ -32,6 +56,10 @@ export function SidebarPage({ activePage }: SidebarProps) {
     { id: "financial-report", label: "Financial Report", icon: "trending-up" },
     { id: "user", label: "User Management", icon: "user-management" },
   ];
+
+  // Filter sidebar items berdasarkan role
+  const sidebarItems = allSidebarItems.filter((item) => hasAccess(item.id));
+
   const getIcon = (icon: string) => {
     switch (icon) {
       case "shopping-cart":
@@ -177,59 +205,68 @@ export function SidebarPage({ activePage }: SidebarProps) {
         return null;
     }
   };
+
   if (isCollapsed) {
     return null;
   }
+
   return (
     <div className="sticky left-0 top-16 z-40">
       <div className="relative z-30 hidden h-full ml-1 mr-1 bg-transparent w-60 lg:block">
-        {/* SIdebar content */}
-        <div className="px-4 py-4">
-          <nav>
-            <ul className="space-y-2 text-[14px]">
-              {sidebarItems.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    href={`/${item.id}`}
-                    prefetch={true}
-                    onMouseEnter={() => {
-                      // Prefetch SWR data sesuai halaman
-                      if (item.id === "product") {
-                        mutate(["products"]);
-                        mutate(["categories"]);
-                      } else if (item.id === "sale") {
-                        mutate(["products"]);
-                        mutate(["categories"]);
-                      } else if (item.id === "financial-report") {
-                        const currentMonth = new Date().getMonth() + 1;
-                        const currentYear = new Date().getFullYear();
-                        mutate(["financial-report", currentMonth, currentYear]);
-                      } else if (item.id === "asset-stock") {
-                        mutate(["assets"]);
-                        mutate(["stocks"]);
-                      } else if (item.id === "adjustment") {
-                        mutate(["stock-adjustments"]);
-                      } else if (item.id === "customer") {
-                        mutate(["customers"]);
-                      } else if (item.id === "transaction") {
-                        mutate(["transactions"]);
-                      } else if (item.id === "user") {
-                        mutate(["users"]);
-                      }
-                    }}
-                    className={`flex w-full items-center rounded-md px-4 py-3 ${
-                      activePage === item.id
-                        ? "bg-blue-600 text-white hover:bg-blue-500"
-                        : "text-gray-600 hover:text-white hover:bg-blue-500"
-                    }`}
-                  >
-                    <span className="mr-3">{getIcon(item.icon)}</span>
-                    <span className="text-[15px]">{item.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        <div className="flex flex-col h-[calc(100vh-4rem)]">
+          {/* Sidebar content */}
+          <div className="px-4 py-4 flex-1">
+            {/* Simple role display at top */}
+            {userRole && (
+              <div className="mb-4 pb-3 border-b border-gray-200">
+                <div className="text-xs text-gray-500">{userRole}</div>
+              </div>
+            )}
+
+            <nav>
+              <ul className="space-y-2 text-[14px]">
+                {sidebarItems.map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      href={`/${item.id}`}
+                      prefetch={true}
+                      onMouseEnter={() => {
+                        // Prefetch SWR data sesuai halaman
+                        if (item.id === "financial-report") {
+                          const currentMonth = new Date().getMonth() + 1;
+                          const currentYear = new Date().getFullYear();
+                          mutate([
+                            "financial-report",
+                            currentMonth,
+                            currentYear,
+                          ]);
+                        } else if (item.id === "asset-stock") {
+                          mutate(["assets"]);
+                          mutate(["stocks"]);
+                        } else if (item.id === "customer") {
+                          mutate(["customers"]);
+                        } else if (item.id === "transaction") {
+                          mutate(["transactions"]);
+                        } else if (item.id === "user") {
+                          mutate(["users"]);
+                        } else if (item.id === "patient-queue") {
+                          mutate(["patient-queue"]);
+                        }
+                      }}
+                      className={`flex w-full items-center rounded-md px-4 py-3 ${
+                        activePage === item.id
+                          ? "bg-blue-600 text-white hover:bg-blue-500"
+                          : "text-gray-600 hover:text-white hover:bg-blue-500"
+                      }`}
+                    >
+                      <span className="mr-3">{getIcon(item.icon)}</span>
+                      <span className="text-[15px]">{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
         </div>
       </div>
     </div>
