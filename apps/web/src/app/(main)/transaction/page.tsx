@@ -214,21 +214,6 @@ const LoadingSkeleton = ({
   </div>
 );
 
-const EmptyState = () => (
-  <div className="text-center py-16 space-y-4">
-    <div className="flex items-center justify-center">
-      <DollarSign className="h-16 w-16 text-gray-400" />
-    </div>
-    <div className="space-y-2">
-      <h3 className="text-lg font-medium text-gray-900">Belum Ada Transaksi</h3>
-      <p className="text-sm text-gray-500 max-w-md mx-auto">
-        Belum ada transaksi kas untuk periode ini. Tambahkan transaksi pertama
-        Anda untuk memulai pencatatan keuangan.
-      </p>
-    </div>
-  </div>
-);
-
 const ErrorState = ({ onRetry }: { onRetry?: () => void }) => (
   <div className="w-full h-full relative">
     <div className="sticky top-16 z-40 bg-background border-b">
@@ -442,7 +427,7 @@ export default function TransaksiKas() {
             </CardContent>
           </Card>
 
-          {/* Transaction Table */}
+          {/* Transaction Table - ALWAYS SHOW */}
           <Card>
             <CardHeader>
               <div>
@@ -471,11 +456,10 @@ export default function TransaksiKas() {
                     </div>
                   </div>
                 </div>
-              ) : !transactions?.length ? (
-                <EmptyState />
               ) : (
+                // ALWAYS SHOW TransactionTable - whether data exists or not
                 <TransactionTable
-                  transactions={transactions}
+                  transactions={transactions || []}
                   customerList={customerList || []}
                   displayTransactions={displayTransactions}
                   loading={isLoading}
