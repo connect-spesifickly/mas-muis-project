@@ -21,7 +21,7 @@ export async function getCustomers(token?: string) {
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/customers`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/customers`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -51,7 +51,7 @@ export async function getServices(page = 1, pageSize = 10, token?: string) {
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services?page=${page}&pageSize=${pageSize}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/services?page=${page}&pageSize=${pageSize}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export async function createService(data: CreateServiceData, token?: string) {
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/services`,
       {
         method: "POST",
         headers: {
@@ -125,7 +125,7 @@ export async function updateDeviceStatus(
   try {
     console.log("oiy ini token", token, "ini id", id, "ini status", status);
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services/devices/${id}/status`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/services/devices/${id}/status`,
       {
         method: "PATCH",
         headers: {

@@ -20,7 +20,8 @@ export async function GET(
     }
 
     // Forward the request to the backend API
-    const backendUrl = process.env.BACKEND_API_URL || "http://localhost:8000";
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
     const backendUrlFull = `${backendUrl}/api/customers/${id}/download-report`;
     console.log("API Route: Backend URL:", backendUrlFull);
 

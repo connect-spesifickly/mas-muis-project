@@ -214,7 +214,7 @@ export default function PatientQueuePage() {
         );
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/services`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/services`,
           {
             headers: {
               "Content-Type": "application/json",
