@@ -1,5 +1,4 @@
 "use client";
-
 import { PageType } from "@/interfaces/page-type";
 import { redirect, usePathname } from "next/navigation";
 import SidebarPage from "./_components/sidebar";
