@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -63,10 +62,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
-export function MonthlyCashChart({
-  monthlyOmset,
-  selectedYear,
-}: MonthlyCashChartProps) {
+export function MonthlyCashChart({ monthlyOmset }: MonthlyCashChartProps) {
   // Transform data untuk chart
   const chartData = months.map((month, index) => {
     const monthData = monthlyOmset.find((data) => data.month === index + 1);

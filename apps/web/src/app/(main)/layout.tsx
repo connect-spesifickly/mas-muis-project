@@ -37,7 +37,7 @@ export default function MainLayout({
     }
   }, [status]);
 
-  const getActivePage = (): PageType => {
+  const getActivePage = React.useCallback((): PageType => {
     if (pathname.startsWith("/customer")) return "customer";
     if (pathname.startsWith("/patient-queue")) return "patient-queue";
     if (pathname.startsWith("/transaction")) return "transaction";
@@ -45,14 +45,17 @@ export default function MainLayout({
     if (pathname.startsWith("/asset-stock")) return "asset-stock";
     if (pathname.startsWith("/user")) return "user";
     return "customer"; // default ke customer sebagai fallback
-  };
+  }, [pathname]);
 
   // Fungsi untuk cek apakah user memiliki akses ke halaman tertentu
-  const hasAccess = (page: PageType): boolean => {
-    if (!session?.role) return false;
-    const userRole = session.role;
-    return rolePermissions[userRole]?.includes(page) || false;
-  };
+  const hasAccess = React.useCallback(
+    (page: PageType): boolean => {
+      if (!session?.role) return false;
+      const userRole = session.role;
+      return rolePermissions[userRole]?.includes(page) || false;
+    },
+    [session]
+  );
 
   // Redirect jika user tidak memiliki akses ke halaman saat ini
   React.useEffect(() => {
@@ -76,7 +79,7 @@ export default function MainLayout({
         }
       }
     }
-  }, [status, session, pathname]);
+  }, [status, session, pathname, getActivePage, hasAccess]);
 
   // Filter bottom navigation items berdasarkan role
   const getFilteredBottomNavItems = () => {

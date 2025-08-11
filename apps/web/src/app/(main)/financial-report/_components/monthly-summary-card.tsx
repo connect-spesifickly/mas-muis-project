@@ -1,6 +1,6 @@
 "use client";
 
-import { DollarSign, Minus, Calculator, Plus } from "lucide-react";
+import { DollarSign, Minus, Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { MonthlySummary } from "@/hooks/use-report";
 
