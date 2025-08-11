@@ -50,7 +50,7 @@ export function SidebarPage({ activePage, userRole }: SidebarProps) {
 
   const allSidebarItems: { id: PageType; label: string; icon: string }[] = [
     { id: "patient-queue", label: "Antrian Pasien", icon: "users" },
-    { id: "customer", label: "Customer", icon: "users" },
+    { id: "customer", label: "Customer", icon: "customer" },
     { id: "transaction", label: "Transaction", icon: "credit-card" },
     { id: "asset-stock", label: "Asset & Stock", icon: "package" },
     { id: "financial-report", label: "Financial Report", icon: "trending-up" },
@@ -79,7 +79,7 @@ export function SidebarPage({ activePage, userRole }: SidebarProps) {
             />
           </svg>
         );
-      case "box":
+      case "customer":
         return (
           <svg
             className="w-5 h-5"
@@ -92,10 +92,14 @@ export function SidebarPage({ activePage, userRole }: SidebarProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"
             />
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-            <line x1="12" y1="22.08" x2="12" y2="12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M6 20v-1a6 6 0 0112 0v1H6z"
+            />
           </svg>
         );
       case "adjustment":
@@ -197,7 +201,7 @@ export function SidebarPage({ activePage, userRole }: SidebarProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+              d="M17 20h5v-1a6 6 0 00-9-5.197M9 20H4v-1a6 6 0 019-5.197M12 12a4 4 0 100-8 4 4 0 000 8zM21 8a3 3 0 11-6 0 3 3 0 016 0zM9 8a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
         );
