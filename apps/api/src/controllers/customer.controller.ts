@@ -78,6 +78,21 @@ class CustomerController {
       next(err);
     }
   }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const result = await customerService.delete(id);
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "Customer deleted",
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default new CustomerController();

@@ -19,6 +19,7 @@ CREATE TABLE "User" (
     "role" "Role" NOT NULL DEFAULT 'TECHNICIAN',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -39,16 +40,25 @@ CREATE TABLE "Customer" (
 -- CreateTable
 CREATE TABLE "Service" (
     "id" SERIAL NOT NULL,
-    "deviceType" TEXT NOT NULL,
-    "problemDescription" TEXT NOT NULL,
-    "status" "ServiceStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "completedAt" TIMESTAMP(3),
     "customerId" TEXT NOT NULL,
     "technicianId" TEXT,
 
     CONSTRAINT "Service_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Device" (
+    "id" SERIAL NOT NULL,
+    "deviceType" TEXT NOT NULL,
+    "problemDescription" TEXT NOT NULL,
+    "accessoriesLeft" TEXT,
+    "status" "ServiceStatus" NOT NULL DEFAULT 'PENDING',
+    "completedAt" TIMESTAMP(3),
+    "serviceId" INTEGER NOT NULL,
+
+    CONSTRAINT "Device_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -86,6 +96,7 @@ CREATE TABLE "Transaction" (
     "type" "TransactionType" NOT NULL,
     "amount" DECIMAL(65,30) NOT NULL,
     "transactionDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "category" TEXT,
     "customerId" TEXT,
     "serviceId" INTEGER,
     "recordedById" TEXT NOT NULL,
@@ -103,9 +114,6 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "Customer_phone_key" ON "Customer"("phone");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Item_name_key" ON "Item"("name");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Transaction_serviceId_key" ON "Transaction"("serviceId");
 
 -- AddForeignKey
@@ -113,6 +121,9 @@ ALTER TABLE "Service" ADD CONSTRAINT "Service_customerId_fkey" FOREIGN KEY ("cus
 
 -- AddForeignKey
 ALTER TABLE "Service" ADD CONSTRAINT "Service_technicianId_fkey" FOREIGN KEY ("technicianId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Device" ADD CONSTRAINT "Device_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ItemAdjustment" ADD CONSTRAINT "ItemAdjustment_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "Item"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

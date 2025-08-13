@@ -334,7 +334,7 @@ export function useCustomers(params: UseCustomerParams) {
     // Helpers
     getCustomerById,
     getCustomersByName,
-
+ mutate,
     // Session info
     isAuthenticated,
     sessionStatus: status,

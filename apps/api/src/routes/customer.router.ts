@@ -29,5 +29,10 @@ export const customerRouter = () => {
     requireRole(["OWNER"]),
     CustomerController.downloadReport
   );
+  router.delete(
+    "/:id",
+    requireRole(["OWNER"]),
+    CustomerController.delete
+  );
   return router;
 };

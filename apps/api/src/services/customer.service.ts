@@ -115,6 +115,27 @@ class CustomerService {
       })),
     };
   }
+  async delete(id: string) {
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      throw new ResponseError(404, "Customer not found");
+    }
+
+    // Check for related services
+    const relatedServices = await prisma.service.count({ where: { customerId: id } });
+    if (relatedServices > 0) {
+      throw new ResponseError(400, "Cannot delete customer with associated services.");
+    }
+
+    // Check for related transactions
+    const relatedTransactions = await prisma.transaction.count({ where: { customerId: id } });
+    if (relatedTransactions > 0) {
+      throw new ResponseError(400, "Cannot delete customer with associated transactions.");
+    }
+
+    await prisma.customer.delete({ where: { id } });
+    return { message: "Customer deleted successfully" };
+  }
 }
 
 export default new CustomerService();

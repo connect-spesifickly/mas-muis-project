@@ -261,6 +261,7 @@ const ErrorState = ({ onRetry }: { onRetry?: () => void }) => (
 
 export default function TransaksiKas() {
   const { data: session, status } = useSession();
+  const canDelete = session?.role === "OWNER";
   const [filters, setFilters] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
@@ -465,8 +466,9 @@ export default function TransaksiKas() {
                   loading={isLoading}
                   showRunningBalance={session?.role === "OWNER"}
                   onAdd={handleCreateTransaction}
-                  onUpdate={handleUpdateTransaction}
-                  onDelete={handleDeleteTransaction}
+          onUpdate={handleUpdateTransaction}
+          onDelete={handleDeleteTransaction}
+          canDelete={canDelete}
                 />
               )}
             </CardContent>

@@ -21,7 +21,7 @@ export const transactionRouter = () => {
   );
   router.delete(
     "/:id",
-    requireRole(["OWNER", "ACCOUNTANT"]),
+    requireRole(["OWNER"]),
     TransactionController.delete
   );
   return router;

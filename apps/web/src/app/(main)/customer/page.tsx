@@ -632,6 +632,7 @@ const CUSTOMER_COLUMNS = [
 export default function DataCustomer() {
   const { user } = useUser();
   const { data: session } = useSession();
+  const canDelete = session?.role === "OWNER";
   const [filters, setFilters] = useState({
     search: "",
     page: 1,
@@ -648,6 +649,7 @@ export default function DataCustomer() {
     createCustomer,
     updateCustomer,
     mergeCustomers,
+    mutate: mutateCustomers,
   } = useCustomers(filters);
 
   const handleCreateCustomer = async (data: Partial<Customer>) => {
@@ -667,7 +669,17 @@ export default function DataCustomer() {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    console.log("Delete not implemented - consider merge instead", id);
+    if (!confirm("Apakah Anda yakin ingin menghapus customer ini?")) return;
+    try {
+      await fetch(`/api/customer/${id}`, {
+        method: "DELETE",
+      });
+      mutateCustomers();
+      toast.success("Customer berhasil dihapus");
+    } catch (error) {
+      console.error("Failed to delete customer:", error);
+      toast.error("Gagal menghapus customer");
+    }
   };
 
   const handleDownloadReport = async (customerId: string) => {
@@ -904,6 +916,7 @@ export default function DataCustomer() {
                 onAdd={handleCreateCustomer}
                 onUpdate={handleUpdateCustomer}
                 onDelete={handleDeleteCustomer}
+                canDelete={canDelete}
                 headerActions={headerActions}
                 customActions={[
                   {

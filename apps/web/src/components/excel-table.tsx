@@ -76,6 +76,7 @@ interface ExcelTableProps<
   onAdd?: (data: T) => Promise<void>;
   onUpdate?: (id: string, data: Partial<T>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
+  canDelete?: boolean;
   customActions?: CustomAction[];
   headerActions?: React.ReactNode;
   customCellRenderer?: (
@@ -98,6 +99,7 @@ export default function ExcelTable<
   onAdd,
   onUpdate,
   onDelete,
+  canDelete = true,
   customActions = [],
   headerActions,
   customCellRenderer,
@@ -697,7 +699,7 @@ export default function ExcelTable<
                                 Edit
                               </DropdownMenuItem>
                             )}
-                            {onDelete && (
+                            {onDelete && canDelete && (
                               <DropdownMenuItem
                                 onClick={() => handleDeleteRow(rowId)}
                               >

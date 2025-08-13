@@ -12,6 +12,7 @@ interface TransactionTableProps {
   onAdd: (data: Partial<Transaction>) => Promise<void>;
   onUpdate: (id: string, data: Partial<Transaction>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  canDelete: boolean;
 }
 
 export function TransactionTable({
@@ -22,6 +23,7 @@ export function TransactionTable({
   onAdd,
   onUpdate,
   onDelete,
+  canDelete,
 }: TransactionTableProps) {
   // Create dynamic columns with customer options
   const transactionColumns = [
@@ -135,6 +137,7 @@ export function TransactionTable({
         onAdd={onAdd}
         onUpdate={onUpdate}
         onDelete={onDelete}
+        canDelete={canDelete}
         customCellRenderer={customCellRenderer}
       />
     </div>
