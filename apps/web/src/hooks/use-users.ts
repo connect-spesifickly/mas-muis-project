@@ -96,7 +96,9 @@ export function useUsers() {
       return newUser;
     } catch (error) {
       console.error("Error creating user:", error);
-      toast.error("Failed to create user");
+      toast.error(
+        "Failed to create user, mungkin user dengan email tersebut sudah ada"
+      );
       throw error;
     }
   };
