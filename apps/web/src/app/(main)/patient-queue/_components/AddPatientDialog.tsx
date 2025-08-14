@@ -25,6 +25,7 @@ import {
   SearchableDropdownOption,
 } from "@/components/ui/searchable-dropdown";
 import { createService } from "../actions";
+import { customerApi } from "@/lib/api/customer";
 import { toast } from "sonner";
 
 const deviceSchema = yup.object().shape({
@@ -60,6 +61,7 @@ export function AddPatientDialog({
   const [open, setOpen] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   const form = useForm<FormData>({
     resolver: yupResolver(formSchema),
@@ -192,8 +194,85 @@ export function AddPatientDialog({
                   Memuat daftar customer...
                 </div>
               ) : customers.length === 0 ? (
-                <div className="flex items-center justify-center p-4 border rounded-md text-muted-foreground">
-                  Tidak ada customer tersedia
+                <div className="flex flex-col gap-2 p-4 border rounded-md text-muted-foreground">
+                  <div className="text-center">Tidak ada customer tersedia</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Nama customer"
+                      id="newCustomerName"
+                      className=""
+                    />
+                    <Input placeholder="No. HP" id="newCustomerPhone" />
+                    <Input
+                      placeholder="Alamat (opsional)"
+                      id="newCustomerAddress"
+                      className="md:col-span-2"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    disabled={creatingCustomer}
+                    onClick={async () => {
+                      const nameInput = (
+                        document.getElementById(
+                          "newCustomerName"
+                        ) as HTMLInputElement
+                      )?.value?.trim();
+                      const phoneInput = (
+                        document.getElementById(
+                          "newCustomerPhone"
+                        ) as HTMLInputElement
+                      )?.value?.trim();
+                      const addressInput = (
+                        document.getElementById(
+                          "newCustomerAddress"
+                        ) as HTMLInputElement
+                      )?.value?.trim();
+                      if (!nameInput || !phoneInput) {
+                        toast.error("Nama dan No. HP wajib diisi");
+                        return;
+                      }
+                      if (!session?.accessToken) {
+                        toast.error("Authentication required");
+                        return;
+                      }
+                      try {
+                        setCreatingCustomer(true);
+                        const created = await customerApi.create(
+                          {
+                            name: nameInput,
+                            phone: phoneInput,
+                            address: addressInput,
+                          },
+                          session.accessToken
+                        );
+                        toast.success("Customer berhasil ditambahkan");
+                        // Refresh list
+                        setCustomers((prev) => [
+                          {
+                            id: created.id,
+                            name: created.name,
+                            phone: created.phone,
+                          },
+                          ...prev,
+                        ]);
+                        // Set selected
+                        form.setValue("customerId", created.id);
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setCreatingCustomer(false);
+                      }
+                    }}
+                  >
+                    {creatingCustomer && (
+                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    )}
+                    Simpan & pilih customer
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -207,17 +286,28 @@ export function AddPatientDialog({
                           label: customer.name,
                           description: customer.phone,
                         }));
+                      // Tambahkan opsi tambah cepat
+                      customerOptions.unshift({
+                        value: "__add_new__",
+                        label: "+ Tambah customer baru",
+                      });
 
                       return (
                         <SearchableDropdown
                           options={customerOptions}
                           value={field.value}
                           onValueChange={(val) => {
-                            if (val === "add-new") {
-                              window.location.href = "/customer";
-                            } else {
-                              field.onChange(val);
+                            if (val === "__add_new__") {
+                              // Toggle mini form tambah (di bawah dropdown)
+                              const el =
+                                document.getElementById("quickAddCustomer");
+                              if (el) {
+                                el.classList.remove("hidden");
+                              }
+                              field.onChange("");
+                              return;
                             }
+                            field.onChange(val);
                           }}
                           placeholder="Pilih customer"
                           searchPlaceholder="Cari nama customer..."
@@ -226,15 +316,98 @@ export function AddPatientDialog({
                       );
                     }}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 w-full"
-                    onClick={() => (window.location.href = "/customer")}
+                  <div
+                    id="quickAddCustomer"
+                    className="mt-2 p-3 border rounded-md hidden"
                   >
-                    + Tambah customer baru
-                  </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <Input placeholder="Nama customer" id="qaCustomerName" />
+                      <Input placeholder="No. HP" id="qaCustomerPhone" />
+                      <Input
+                        placeholder="Alamat (opsional)"
+                        id="qaCustomerAddress"
+                        className="md:col-span-2"
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={creatingCustomer}
+                        onClick={async () => {
+                          const nameInput = (
+                            document.getElementById(
+                              "qaCustomerName"
+                            ) as HTMLInputElement
+                          )?.value?.trim();
+                          const phoneInput = (
+                            document.getElementById(
+                              "qaCustomerPhone"
+                            ) as HTMLInputElement
+                          )?.value?.trim();
+                          const addressInput = (
+                            document.getElementById(
+                              "qaCustomerAddress"
+                            ) as HTMLInputElement
+                          )?.value?.trim();
+                          if (!nameInput || !phoneInput) {
+                            toast.error("Nama dan No. HP wajib diisi");
+                            return;
+                          }
+                          if (!session?.accessToken) {
+                            toast.error("Authentication required");
+                            return;
+                          }
+                          try {
+                            setCreatingCustomer(true);
+                            const created = await customerApi.create(
+                              {
+                                name: nameInput,
+                                phone: phoneInput,
+                                address: addressInput,
+                              },
+                              session.accessToken
+                            );
+                            toast.success("Customer berhasil ditambahkan");
+                            setCustomers((prev) => [
+                              {
+                                id: created.id,
+                                name: created.name,
+                                phone: created.phone,
+                              },
+                              ...prev,
+                            ]);
+                            form.setValue("customerId", created.id);
+                            const el =
+                              document.getElementById("quickAddCustomer");
+                            if (el) el.classList.add("hidden");
+                          } catch (e) {
+                            console.error(e);
+                          } finally {
+                            setCreatingCustomer(false);
+                          }
+                        }}
+                      >
+                        {creatingCustomer && (
+                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                        )}
+                        Simpan & pilih customer
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const el =
+                            document.getElementById("quickAddCustomer");
+                          if (el) el.classList.add("hidden");
+                        }}
+                      >
+                        Batal
+                      </Button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
