@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { serviceApi, type CompletedServiceOption } from "@/lib/api/service";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ export default function ServiceSelect({ onPick }: ServiceSelectProps) {
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<CompletedServiceOption[]>([]);
 
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = (session as unknown as { accessToken?: string } | null)
+    ?.accessToken as string | undefined;
 
   const fetchOptions = async (q?: string) => {
     if (!token) return;
@@ -28,8 +29,8 @@ export default function ServiceSelect({ onPick }: ServiceSelectProps) {
         25
       );
       setOptions(data);
-    } catch (e) {
-      console.error("Failed fetching completed services:", e);
+    } catch (err) {
+      console.error("Failed fetching completed services:", err);
       setOptions([]);
     } finally {
       setLoading(false);

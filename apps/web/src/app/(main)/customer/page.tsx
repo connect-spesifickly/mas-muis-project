@@ -280,7 +280,7 @@ function DeleteCustomerModal({
     try {
       await onDelete(customer.id);
       onClose();
-    } catch (e) {
+    } catch {
       // error handled by caller toast
     } finally {
       setLoading(false);
@@ -293,8 +293,8 @@ function DeleteCustomerModal({
         <DialogHeader>
           <DialogTitle>Hapus Customer</DialogTitle>
           <DialogDescription>
-            Apakah Anda yakin ingin menghapus customer "{customer?.name}"?
-            Tindakan ini tidak dapat dibatalkan.
+            Apakah Anda yakin ingin menghapus customer &quot;{customer?.name}
+            &quot;? Tindakan ini tidak dapat dibatalkan.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -708,7 +708,6 @@ export default function DataCustomer() {
     updateCustomer,
     mergeCustomers,
     deleteCustomer,
-    mutate: mutateCustomers,
   } = useCustomers(filters);
 
   const handleCreateCustomer = async (data: Partial<Customer>) => {
@@ -1021,7 +1020,7 @@ export default function DataCustomer() {
             await deleteCustomer(id);
             setShowDeleteModal(false);
             setSelectedCustomerId(null);
-          } catch (e) {}
+          } catch {}
         }}
       />
     </div>

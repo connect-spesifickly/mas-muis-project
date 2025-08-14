@@ -117,13 +117,13 @@ export default function ExcelTable<
         if (
           col.type === "date" &&
           (prev[col.key as keyof T] === undefined ||
-            prev[col.key as keyof T] === ("" as any))
+            (prev[col.key as keyof T] as unknown as string) === "")
         ) {
           const d = new Date();
           const yyyy = d.getFullYear();
           const mm = String(d.getMonth() + 1).padStart(2, "0");
           const dd = String(d.getDate()).padStart(2, "0");
-          (updated as any)[col.key] = `${yyyy}-${mm}-${dd}`;
+          (updated as Record<string, unknown>)[col.key] = `${yyyy}-${mm}-${dd}`;
           changed = true;
         }
       });

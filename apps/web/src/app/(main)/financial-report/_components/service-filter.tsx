@@ -13,7 +13,8 @@ interface ServiceFilterProps {
 
 export function ServiceFilter({ onSelect, selected }: ServiceFilterProps) {
   const { data: session } = useSession();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = (session as unknown as { accessToken?: string } | null)
+    ?.accessToken as string | undefined;
 
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,8 +30,8 @@ export function ServiceFilter({ onSelect, selected }: ServiceFilterProps) {
         25
       );
       setOptions(data);
-    } catch (e) {
-      console.error("ServiceFilter: failed to fetch options", e);
+    } catch (err) {
+      console.error("ServiceFilter: failed to fetch options", err);
       setOptions([]);
     } finally {
       setLoading(false);
