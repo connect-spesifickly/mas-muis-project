@@ -5,7 +5,18 @@ export default async function RootPage() {
   const session = await auth();
 
   if (session) {
-    redirect("/customer");
+    const role = session.role;
+
+    if (role === "OWNER" || role === "TECHNICIAN") {
+      // Owner & Technician -> Antrian Pasien
+      redirect("/patient-queue");
+    } else if (role === "ACCOUNTANT") {
+      // Accountant -> Transaksi Kas
+      redirect("/transaction");
+    } else {
+      // Fallback
+      redirect("/customer");
+    }
   } else {
     redirect("/login");
   }
