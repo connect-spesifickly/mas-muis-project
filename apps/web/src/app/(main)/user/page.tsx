@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useUsers } from "@/hooks/use-users";
+
 import { User, CreateUserData } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -463,6 +464,7 @@ export default function UserManagement() {
     loading,
     filters,
     setFilters,
+    fetchUsers,
     fetchDeletedUsers,
     createUser,
     removeUser,
@@ -539,12 +541,23 @@ export default function UserManagement() {
 
   const handleConfirmRestore = async (id: string) => {
     await restoreUser(id);
+    // Always refresh active users list so it's up-to-date
+    await fetchUsers();
+    // If we are currently on the Deleted tab, also refresh the deleted list
+    if (showDeleted) {
+      await fetchDeletedUsers();
+    }
+    // Optionally force route refresh if needed
+    // router.refresh();
   };
 
   const handleToggleDeleted = () => {
-    setShowDeleted(!showDeleted);
-    if (!showDeleted) {
+    const next = !showDeleted;
+    setShowDeleted(next);
+    if (next) {
       fetchDeletedUsers();
+    } else {
+      fetchUsers();
     }
   };
 
