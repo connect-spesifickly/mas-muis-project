@@ -57,4 +57,12 @@ export const userApi = {
     );
     return response.data;
   },
+  hardDelete: async (id: string, token?: string) => {
+    const response = await api.delete(`/users/${id}/hard`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
 };

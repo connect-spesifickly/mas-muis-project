@@ -67,6 +67,20 @@ class UserService {
       },
     });
   }
+  async hardDelete(id: string) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw new ResponseError(404, "User not found");
+    if (user.role === Role.OWNER)
+      throw new ResponseError(403, "Cannot delete OWNER");
+    if (!user.deletedAt)
+      throw new ResponseError(
+        400,
+        "User must be soft-deleted before hard delete"
+      );
+
+    await prisma.user.delete({ where: { id } });
+    return true;
+  }
 }
 
 export default new UserService();

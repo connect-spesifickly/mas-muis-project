@@ -131,6 +131,20 @@ export function useUsers() {
     }
   };
 
+  const hardDeleteUser = async (id: string) => {
+    if (!session?.accessToken) return;
+
+    try {
+      await userApi.hardDelete(id, session.accessToken);
+      setAllDeletedUsers((prev) => prev.filter((user) => user.id !== id));
+      toast.success("User permanently deleted");
+    } catch (error) {
+      console.error("Error hard-deleting user:", error);
+      toast.error("Failed to permanently delete user");
+      throw error;
+    }
+  };
+
   // Hanya fetch saat session berubah atau saat pertama kali load
   // Tidak fetch ulang saat search berubah
   useEffect(() => {
@@ -148,5 +162,6 @@ export function useUsers() {
     createUser,
     removeUser,
     restoreUser,
+    hardDeleteUser,
   };
 }

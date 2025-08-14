@@ -70,6 +70,19 @@ class UserController {
       next(err);
     }
   }
+  async hardDelete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await userService.hardDelete(req.params.id);
+      ApiResponse({
+        res,
+        statusCode: 200,
+        message: "User permanently deleted",
+        data: null,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default new UserController();

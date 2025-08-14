@@ -230,12 +230,19 @@ function RestoreUserModal({
             user active again.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button type="button" onClick={handleRestore} disabled={loading}>
-            {loading ? "Restoring..." : "Restore"}
+            {loading ? (
+              "Restoring..."
+            ) : (
+              <span className="flex items-center">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Restore
+              </span>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -346,11 +353,13 @@ function UserTable({
   users,
   onDelete,
   onRestore,
+  onHardDelete,
   showDeleted = false,
 }: {
   users: User[];
   onDelete: (user: User) => void;
   onRestore: (user: User) => void;
+  onHardDelete: (user: User) => void;
   showDeleted?: boolean;
 }) {
   const getRoleBadge = (role: string) => {
@@ -408,14 +417,23 @@ function UserTable({
                   )}
                 </div>
                 {showDeleted ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRestore(user)}
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Restore
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRestore(user)}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Restore
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => onHardDelete(user)}
+                    >
+                      Hard Delete
+                    </Button>
+                  </div>
                 ) : (
                   user.role !== "OWNER" && (
                     <Button
@@ -449,6 +467,7 @@ export default function UserManagement() {
     createUser,
     removeUser,
     restoreUser,
+    hardDeleteUser,
   } = useUsers();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -456,6 +475,7 @@ export default function UserManagement() {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [isHardDelete, setIsHardDelete] = useState(false);
 
   // Show full page skeleton when checking user authentication
   if (userLoading) {
@@ -498,6 +518,7 @@ export default function UserManagement() {
   };
 
   const handleDeleteUser = async (user: User) => {
+    setIsHardDelete(false);
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
@@ -508,7 +529,12 @@ export default function UserManagement() {
   };
 
   const handleConfirmDelete = async (id: string) => {
-    await removeUser(id);
+    if (isHardDelete) {
+      await hardDeleteUser(id);
+      setIsHardDelete(false);
+    } else {
+      await removeUser(id);
+    }
   };
 
   const handleConfirmRestore = async (id: string) => {
@@ -612,6 +638,11 @@ export default function UserManagement() {
                   users={showDeleted ? deletedUsers : users}
                   onDelete={handleDeleteUser}
                   onRestore={handleRestoreUser}
+                  onHardDelete={(user: User) => {
+                    setIsHardDelete(true);
+                    setSelectedUser(user);
+                    setShowDeleteModal(true);
+                  }}
                   showDeleted={showDeleted}
                 />
               )}

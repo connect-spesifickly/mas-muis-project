@@ -16,5 +16,6 @@ export const userRouter = () => {
   );
   router.delete("/:id", requireRole(["OWNER"]), UserController.remove);
   router.patch("/:id/restore", requireRole(["OWNER"]), UserController.restore);
+  router.delete("/:id/hard", requireRole(["OWNER"]), UserController.hardDelete);
   return router;
 };
