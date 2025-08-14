@@ -300,7 +300,9 @@ export function useCustomers(params: UseCustomerParams) {
     } catch (error) {
       const errorInfo = extractErrorMessage(error);
       console.error("Failed to delete customer:", errorInfo);
-      toast.error(`Gagal menghapus customer: ${errorInfo.message}`);
+      toast.error(
+        `Gagal menghapus customer: ${errorInfo.message}, mungkin data cutomer tertaut ke data lainnya`
+      );
       throw error;
     } finally {
       setActionLoading((prev) => ({ ...prev, deleting: false }));
