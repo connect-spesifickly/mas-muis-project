@@ -24,6 +24,7 @@ export interface CreateCustomerData {
   phone: string;
   address?: string;
   notes?: string;
+  createdAt?: string | Date; // optional custom join date
 }
 
 export interface UpdateCustomerData {
@@ -31,6 +32,7 @@ export interface UpdateCustomerData {
   phone?: string;
   address?: string;
   notes?: string;
+  createdAt?: string | Date; // allow editing join date if needed
 }
 
 export interface CustomerFilters {

@@ -261,6 +261,60 @@ function MergeCustomerModal({
   );
 }
 
+function DeleteCustomerModal({
+  isOpen,
+  onClose,
+  customer,
+  onDelete,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  customer: Customer | null;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDelete = async () => {
+    if (!customer) return;
+    setLoading(true);
+    try {
+      await onDelete(customer.id);
+      onClose();
+    } catch (e) {
+      // error handled by caller toast
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Hapus Customer</DialogTitle>
+          <DialogDescription>
+            Apakah Anda yakin ingin menghapus customer "{customer?.name}"?
+            Tindakan ini tidak dapat dibatalkan.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Batal
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={loading}
+          >
+            {loading ? "Menghapus..." : "Hapus"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ExportExcelModal({
   isOpen,
   onClose,
@@ -640,6 +694,10 @@ export default function DataCustomer() {
   });
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null
+  );
 
   const {
     customers,
@@ -649,6 +707,7 @@ export default function DataCustomer() {
     createCustomer,
     updateCustomer,
     mergeCustomers,
+    deleteCustomer,
     mutate: mutateCustomers,
   } = useCustomers(filters);
 
@@ -669,17 +728,8 @@ export default function DataCustomer() {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus customer ini?")) return;
-    try {
-      await fetch(`/api/customer/${id}`, {
-        method: "DELETE",
-      });
-      mutateCustomers();
-      toast.success("Customer berhasil dihapus");
-    } catch (error) {
-      console.error("Failed to delete customer:", error);
-      toast.error("Gagal menghapus customer");
-    }
+    setSelectedCustomerId(id);
+    setShowDeleteModal(true);
   };
 
   const handleDownloadReport = async (customerId: string) => {
@@ -959,6 +1009,20 @@ export default function DataCustomer() {
         onClose={() => setIsExportModalOpen(false)}
         customers={customers}
         onExport={handleDownloadReport}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteCustomerModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        customer={customers.find((c) => c.id === selectedCustomerId) || null}
+        onDelete={async (id) => {
+          try {
+            await deleteCustomer(id);
+            setShowDeleteModal(false);
+            setSelectedCustomerId(null);
+          } catch (e) {}
+        }}
       />
     </div>
   );

@@ -21,7 +21,13 @@ export const customerApi = {
   },
 
   create: async (data: CreateCustomerData, token?: string) => {
-    const response = await api.post<CustomerResponse>("/customers", data, {
+    const payload = { ...data };
+    // normalize createdAt if provided as string (YYYY-MM-DD)
+    if (payload.createdAt && typeof payload.createdAt === "string") {
+      // Convert YYYY-MM-DD to ISO to avoid timezone shift
+      payload.createdAt = new Date(`${payload.createdAt}T00:00:00`);
+    }
+    const response = await api.post<CustomerResponse>("/customers", payload, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -30,9 +36,13 @@ export const customerApi = {
   },
 
   update: async (id: string, data: UpdateCustomerData, token?: string) => {
+    const payload = { ...data };
+    if (payload.createdAt && typeof payload.createdAt === "string") {
+      payload.createdAt = new Date(`${payload.createdAt}T00:00:00`);
+    }
     const response = await api.patch<CustomerResponse>(
       `/customers/${id}`,
-      data,
+      payload,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -49,6 +59,15 @@ export const customerApi = {
       },
     });
     return response.data;
+  },
+
+  delete: async (id: string, token?: string) => {
+    const response = await api.delete(`/customers/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data; // Typically { message: "Customer deleted" | ApiResponse wrapper }
   },
 
   downloadReport: async (customerId: string, token?: string) => {

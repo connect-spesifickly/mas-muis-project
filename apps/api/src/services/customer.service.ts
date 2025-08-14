@@ -43,20 +43,54 @@ class CustomerService {
     phone: string;
     address?: string;
     notes?: string;
+    createdAt?: string | Date;
   }) {
     const existing = await prisma.customer.findUnique({
       where: { phone: data.phone },
     });
     if (existing) throw new ResponseError(409, "Phone already registered");
-    return prisma.customer.create({ data });
+
+    // Build payload and allow custom createdAt if provided
+    const payload: any = {
+      name: data.name,
+      phone: data.phone,
+      address: data.address,
+      notes: data.notes,
+    };
+
+    if (data.createdAt) {
+      const date = new Date(data.createdAt);
+      if (!isNaN(date.getTime())) {
+        payload.createdAt = date;
+      }
+    }
+
+    return prisma.customer.create({ data: payload });
   }
   async update(
     id: string,
-    data: { name?: string; phone?: string; address?: string; notes?: string }
+    data: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      notes?: string;
+      createdAt?: string | Date;
+    }
   ) {
     const customer = await prisma.customer.findUnique({ where: { id } });
     if (!customer) throw new ResponseError(404, "Customer not found");
-    return prisma.customer.update({ where: { id }, data });
+
+    const payload: any = { ...data };
+    if (data.createdAt) {
+      const date = new Date(data.createdAt);
+      if (!isNaN(date.getTime())) {
+        payload.createdAt = date;
+      } else {
+        delete payload.createdAt; // Ignore invalid date
+      }
+    }
+
+    return prisma.customer.update({ where: { id }, data: payload });
   }
   async merge(primaryCustomerId: string, duplicateCustomerId: string) {
     return prisma.$transaction(async (tx) => {
@@ -122,15 +156,25 @@ class CustomerService {
     }
 
     // Check for related services
-    const relatedServices = await prisma.service.count({ where: { customerId: id } });
+    const relatedServices = await prisma.service.count({
+      where: { customerId: id },
+    });
     if (relatedServices > 0) {
-      throw new ResponseError(400, "Cannot delete customer with associated services.");
+      throw new ResponseError(
+        400,
+        "Cannot delete customer with associated services."
+      );
     }
 
     // Check for related transactions
-    const relatedTransactions = await prisma.transaction.count({ where: { customerId: id } });
+    const relatedTransactions = await prisma.transaction.count({
+      where: { customerId: id },
+    });
     if (relatedTransactions > 0) {
-      throw new ResponseError(400, "Cannot delete customer with associated transactions.");
+      throw new ResponseError(
+        400,
+        "Cannot delete customer with associated transactions."
+      );
     }
 
     await prisma.customer.delete({ where: { id } });

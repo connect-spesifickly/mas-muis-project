@@ -112,6 +112,7 @@ export function useCustomers(params: UseCustomerParams) {
     creating: false,
     updating: false,
     merging: false,
+    deleting: false,
     downloading: false,
   });
 
@@ -175,6 +176,7 @@ export function useCustomers(params: UseCustomerParams) {
       creating: actionLoading.creating,
       updating: actionLoading.updating,
       merging: actionLoading.merging,
+      deleting: actionLoading.deleting,
       downloading: actionLoading.downloading,
       anyAction: Object.values(actionLoading).some(Boolean),
     }),
@@ -283,6 +285,28 @@ export function useCustomers(params: UseCustomerParams) {
     }
   };
 
+  const deleteCustomer = async (id: string) => {
+    if (!token) {
+      toast.error("Token tidak tersedia");
+      throw new Error("Authentication token not available");
+    }
+
+    setActionLoading((prev) => ({ ...prev, deleting: true }));
+
+    try {
+      await customerApi.delete(id, token);
+      toast.success("Customer berhasil dihapus");
+      await mutate();
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to delete customer:", errorInfo);
+      toast.error(`Gagal menghapus customer: ${errorInfo.message}`);
+      throw error;
+    } finally {
+      setActionLoading((prev) => ({ ...prev, deleting: false }));
+    }
+  };
+
   const refetch = React.useCallback(async () => {
     try {
       await mutate();
@@ -329,12 +353,13 @@ export function useCustomers(params: UseCustomerParams) {
     updateCustomer,
     mergeCustomers,
     downloadReport,
+    deleteCustomer,
     refetch,
 
     // Helpers
     getCustomerById,
     getCustomersByName,
- mutate,
+    mutate,
     // Session info
     isAuthenticated,
     sessionStatus: status,

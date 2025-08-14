@@ -107,6 +107,29 @@ export default function ExcelTable<
   const [tableData, setTableData] = useState<T[]>(data);
   const [newRow, setNewRow] = useState<Partial<T>>({});
   const [filters, setFilters] = useState<Record<string, string>>({});
+
+  // Prefill date columns in the add-row with today's date (YYYY-MM-DD)
+  useEffect(() => {
+    setNewRow((prev) => {
+      let changed = false;
+      const updated: Partial<T> = { ...prev };
+      columns.forEach((col) => {
+        if (
+          col.type === "date" &&
+          (prev[col.key as keyof T] === undefined ||
+            prev[col.key as keyof T] === ("" as any))
+        ) {
+          const d = new Date();
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          (updated as any)[col.key] = `${yyyy}-${mm}-${dd}`;
+          changed = true;
+        }
+      });
+      return changed ? updated : prev;
+    });
+  }, [columns]);
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -438,15 +461,42 @@ export default function ExcelTable<
             className="h-8"
           />
         );
-      case "date":
+      case "date": {
+        // Normalize value to YYYY-MM-DD for input type=date and add helpful hint for join date
+        let inputValue = "";
+        if (value) {
+          const v = String(value);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+            inputValue = v;
+          } else {
+            const dt = new Date(v);
+            if (!isNaN(dt.getTime())) {
+              const yyyy = dt.getFullYear();
+              const mm = String(dt.getMonth() + 1).padStart(2, "0");
+              const dd = String(dt.getDate()).padStart(2, "0");
+              inputValue = `${yyyy}-${mm}-${dd}`;
+            }
+          }
+        }
         return (
           <Input
             type="date"
-            value={String(value || "")}
+            value={inputValue}
             onChange={(e) => onChange?.(e.target.value)}
             className="h-8"
+            placeholder={
+              column.key === "createdAt"
+                ? "Default hari ini — bisa diubah"
+                : undefined
+            }
+            title={
+              column.key === "createdAt"
+                ? "Default hari ini — bisa diubah"
+                : undefined
+            }
           />
         );
+      }
       default:
         return (
           <Input
