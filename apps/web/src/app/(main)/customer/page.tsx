@@ -62,48 +62,6 @@ import { Users, AlertTriangle, Download, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
-function CustomerPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}) {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  return (
-    <div className="flex justify-center gap-2 mt-4">
-      <Button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        variant="outline"
-        size="sm"
-      >
-        Previous
-      </Button>
-      {pages.map((page) => (
-        <Button
-          key={page}
-          onClick={() => onPageChange(page)}
-          variant={page === currentPage ? "default" : "outline"}
-          size="sm"
-        >
-          {page}
-        </Button>
-      ))}
-      <Button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        variant="outline"
-        size="sm"
-      >
-        Next
-      </Button>
-    </div>
-  );
-}
-
 function MergeCustomerModal({
   isOpen,
   onClose,
@@ -688,7 +646,7 @@ export default function DataCustomer() {
   const { user } = useUser();
   const { data: session } = useSession();
   const canDelete = session?.role === "OWNER";
-  const [filters, setFilters] = useState({
+  const [filters] = useState({
     search: "",
     limit: 15,
   });
@@ -716,7 +674,7 @@ export default function DataCustomer() {
   const { loadMoreRef } = useInfiniteScroll(
     loadMore,
     hasMore,
-    isLoading || isLoadingMore,
+    Boolean(isLoading || isLoadingMore),
     {
       threshold: 200,
       enabled: true,

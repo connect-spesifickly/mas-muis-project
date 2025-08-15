@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import { useSession } from "next-auth/react";

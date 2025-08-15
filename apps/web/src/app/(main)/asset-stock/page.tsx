@@ -172,7 +172,7 @@ export default function AssetStockPage() {
   const { loadMoreRef: assetsLoadMoreRef } = useInfiniteScroll(
     assetsLoadMore,
     assetsHasMore,
-    assetsLoading || assetsLoadingMore,
+    Boolean(assetsLoading || assetsLoadingMore),
     {
       threshold: 200,
       enabled: true,
@@ -183,7 +183,7 @@ export default function AssetStockPage() {
   const { loadMoreRef: stocksLoadMoreRef } = useInfiniteScroll(
     stocksLoadMore,
     stocksHasMore,
-    stocksLoading || stocksLoadingMore,
+    Boolean(stocksLoading || stocksLoadingMore),
     {
       threshold: 200,
       enabled: true,

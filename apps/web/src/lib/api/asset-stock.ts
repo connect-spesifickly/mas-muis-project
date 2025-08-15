@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { api } from "@/utils/axios";
 import type {
   Asset,
@@ -28,7 +29,10 @@ interface ApiError {
 
 export const assetStockApi = {
   // Asset APIs
-  getAssets: async (token?: string): Promise<AssetListResponse> => {
+  getAssets: async (
+    token?: string,
+    params?: { page: number; limit: number }
+  ): Promise<AssetListResponse> => {
     try {
       const response = await api.get<ApiResponse<AssetListResponse>>(
         "/asset-stock/assets",
@@ -123,7 +127,10 @@ export const assetStockApi = {
   },
 
   // Stock APIs
-  getStocks: async (token?: string): Promise<StockListResponse> => {
+  getStocks: async (
+    token?: string,
+    params?: { page: number; limit: number }
+  ): Promise<StockListResponse> => {
     try {
       const response = await api.get<ApiResponse<StockListResponse>>(
         "/asset-stock/stocks",

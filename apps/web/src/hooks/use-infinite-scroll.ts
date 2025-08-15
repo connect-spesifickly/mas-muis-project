@@ -80,7 +80,7 @@ export function useInfiniteScroll(
   }, [enabled, hasMore, isLoading, onLoadMore, threshold]);
 
   return {
-    loadMoreRef,
+    loadMoreRef: loadMoreRef as React.RefObject<HTMLDivElement>,
     isNearBottom,
   };
 }
