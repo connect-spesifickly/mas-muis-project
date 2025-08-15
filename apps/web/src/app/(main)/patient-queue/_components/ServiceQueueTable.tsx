@@ -128,25 +128,31 @@ export function ServiceQueueTable({
           ) : (
             (services || []).map((service) => (
               <TableRow key={service.id}>
-                <TableCell className="font-medium">
+                <TableCell className="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
                   {format(new Date(service.createdAt), "dd MMM yyyy")}
                 </TableCell>
-                <TableCell>{service.customer.name}</TableCell>
-                <TableCell>{service.customer.phone}</TableCell>
-                <TableCell>
+                <TableCell className="whitespace-normal break-words break-all">
+                  {service.customer.name}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-ellipsis overflow-hidden">
+                  {service.customer.phone}
+                </TableCell>
+                <TableCell className="whitespace-normal break-words break-all">
                   <div className="grid gap-2">
                     {service.devices.map((device) => (
                       <div
                         key={device.id}
                         className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 border rounded-md"
                       >
-                        <div className="flex-1">
-                          <p className="font-semibold">{device.deviceType}</p>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold whitespace-normal break-words break-all">
+                            {device.deviceType}
+                          </p>
+                          <p className="text-sm text-muted-foreground whitespace-normal break-words break-all">
                             Keluhan: {device.problemDescription}
                           </p>
                           {device.accessoriesLeft && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground whitespace-normal break-words break-all">
                               Ditinggal: {device.accessoriesLeft}
                             </p>
                           )}
@@ -173,8 +179,16 @@ export function ServiceQueueTable({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {Object.values(ServiceStatus).map(
-                              (statusOption) => (
+                            {Object.values(ServiceStatus)
+                              .filter(
+                                (s) =>
+                                  ![
+                                    ServiceStatus.COMPLETED,
+                                    ServiceStatus.RETURNED_TO_CUSTOMER,
+                                    ServiceStatus.CANCELLED,
+                                  ].includes(s)
+                              )
+                              .map((statusOption) => (
                                 <DropdownMenuItem
                                   key={statusOption}
                                   onSelect={() =>
@@ -187,8 +201,7 @@ export function ServiceQueueTable({
                                     <Check className="ml-auto h-4 w-4" />
                                   )}
                                 </DropdownMenuItem>
-                              )
-                            )}
+                              ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
