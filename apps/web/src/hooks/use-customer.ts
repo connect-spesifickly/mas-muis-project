@@ -127,8 +127,8 @@ export function useCustomers(params: UseCustomerParams) {
   }, [status, token, params]);
 
   const { data, error, isLoading, isValidating, mutate } = useSWR(
-    isAuthenticated ? ["customers", params, token] : null,
-    ([, keyParams, token]) => fetchCustomersApi(keyParams, token),
+    isAuthenticated && token ? ["customers", params, token] : null,
+    ([, keyParams, tkn]) => fetchCustomersApi(keyParams, tkn),
     {
       revalidateOnFocus: false,
       revalidateFirstPage: false,

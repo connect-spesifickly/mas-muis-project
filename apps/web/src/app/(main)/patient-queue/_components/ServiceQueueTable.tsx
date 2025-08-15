@@ -106,13 +106,13 @@ export function ServiceQueueTable({
 
   return (
     <div className="border shadow-sm rounded-lg overflow-x-auto">
-      <Table>
+      <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
             <TableHead className="w-[120px]">Tanggal</TableHead>
-            <TableHead className="w-[150px]">Nama Customer</TableHead>
-            <TableHead className="w-[120px]">No. HP</TableHead>
-            <TableHead>Pasien (Perangkat & Status)</TableHead>
+            <TableHead className="w-[150px] max-w-[150px]">Nama Customer</TableHead>
+            <TableHead className="w-[120px] max-w-[120px]">No. HP</TableHead>
+            <TableHead className="max-w-[300px]">Pasien (Perangkat & Status)</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -131,13 +131,13 @@ export function ServiceQueueTable({
                 <TableCell className="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
                   {format(new Date(service.createdAt), "dd MMM yyyy")}
                 </TableCell>
-                <TableCell className="whitespace-normal break-words break-all">
+                <TableCell className="max-w-[150px] whitespace-normal break-words overflow-hidden">
                   {service.customer.name}
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-ellipsis overflow-hidden">
+                <TableCell className="max-w-[120px] whitespace-normal break-words overflow-hidden">
                   {service.customer.phone}
                 </TableCell>
-                <TableCell className="whitespace-normal break-words break-all">
+                <TableCell className="max-w-[300px] whitespace-normal break-words overflow-hidden">
                   <div className="grid gap-2">
                     {service.devices.map((device) => (
                       <div
@@ -145,14 +145,14 @@ export function ServiceQueueTable({
                         className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 border rounded-md"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold whitespace-normal break-words break-all">
+                          <p className="font-semibold whitespace-normal break-words overflow-hidden">
                             {device.deviceType}
                           </p>
-                          <p className="text-sm text-muted-foreground whitespace-normal break-words break-all">
+                          <p className="text-sm text-muted-foreground whitespace-normal break-words overflow-hidden">
                             Keluhan: {device.problemDescription}
                           </p>
                           {device.accessoriesLeft && (
-                            <p className="text-xs text-muted-foreground whitespace-normal break-words break-all">
+                            <p className="text-xs text-muted-foreground whitespace-normal break-words overflow-hidden">
                               Ditinggal: {device.accessoriesLeft}
                             </p>
                           )}

@@ -10,11 +10,10 @@ import type {
 
 export const customerApi = {
   list: async (params: CustomerFilters, token?: string) => {
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const response = await api.get<CustomerListResponse>("/customers", {
       params,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     return response.data;

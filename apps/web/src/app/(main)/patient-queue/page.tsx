@@ -223,7 +223,6 @@ export default function PatientQueuePage() {
       { value: ServiceStatus.PENDING, label: "Tertunda" },
       { value: ServiceStatus.CONFIRMATION, label: "Menunggu Konfirmasi" },
       { value: ServiceStatus.IN_PROGRESS, label: "Dalam Proses" },
-      // Removed: COMPLETED, RETURNED_TO_CUSTOMER, CANCELLED
     ],
     []
   );
