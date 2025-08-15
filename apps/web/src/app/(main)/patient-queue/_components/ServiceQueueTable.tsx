@@ -110,9 +110,13 @@ export function ServiceQueueTable({
         <TableHeader>
           <TableRow>
             <TableHead className="w-[120px]">Tanggal</TableHead>
-            <TableHead className="w-[150px] max-w-[150px]">Nama Customer</TableHead>
+            <TableHead className="w-[150px] max-w-[150px]">
+              Nama Customer
+            </TableHead>
             <TableHead className="w-[120px] max-w-[120px]">No. HP</TableHead>
-            <TableHead className="max-w-[300px]">Pasien (Perangkat & Status)</TableHead>
+            <TableHead className="max-w-[300px]">
+              Pasien (Perangkat & Status)
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -180,14 +184,7 @@ export function ServiceQueueTable({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             {Object.values(ServiceStatus)
-                              .filter(
-                                (s) =>
-                                  ![
-                                    ServiceStatus.COMPLETED,
-                                    ServiceStatus.RETURNED_TO_CUSTOMER,
-                                    ServiceStatus.CANCELLED,
-                                  ].includes(s)
-                              )
+
                               .map((statusOption) => (
                                 <DropdownMenuItem
                                   key={statusOption}
