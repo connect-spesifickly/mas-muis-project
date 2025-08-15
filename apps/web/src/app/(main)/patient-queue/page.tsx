@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +9,14 @@ import { ServiceQueueTable } from "./_components/ServiceQueueTable";
 import { useSession } from "next-auth/react";
 import { Loader2, Users, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ServiceStatus } from "@/types/service";
 
 // Skeleton Components
 const SkeletonTableRow = () => (
@@ -190,6 +198,24 @@ export default function PatientQueuePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tableLoading, setTableLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"ALL" | ServiceStatus>(
+    "ALL"
+  );
+  const statusOptions = useMemo(
+    () => [
+      { value: "ALL", label: "Semua Status" },
+      { value: ServiceStatus.PENDING, label: "Tertunda" },
+      { value: ServiceStatus.CONFIRMATION, label: "Menunggu Konfirmasi" },
+      { value: ServiceStatus.IN_PROGRESS, label: "Dalam Proses" },
+      { value: ServiceStatus.COMPLETED, label: "Selesai" },
+      {
+        value: ServiceStatus.RETURNED_TO_CUSTOMER,
+        label: "Dikembalikan ke Pelanggan",
+      },
+      { value: ServiceStatus.CANCELLED, label: "Dibatalkan" },
+    ],
+    []
+  );
 
   const fetchServices = useCallback(
     async (showTableLoading = false) => {
@@ -266,6 +292,19 @@ export default function PatientQueuePage() {
     }
   }, [fetchServices, status]);
 
+  const filteredServices = useMemo(() => {
+    if (statusFilter === "ALL") return services;
+    // Keep only devices matching the selected status; drop services with no matching devices
+    return (services as any[])
+      .map((s: any) => ({
+        ...s,
+        devices: (s.devices || []).filter(
+          (d: any) => d.status === statusFilter
+        ),
+      }))
+      .filter((s: any) => (s.devices || []).length > 0);
+  }, [services, statusFilter]);
+
   // Show loading skeleton during initial load
   if (status === "loading" || (loading && services.length === 0)) {
     return <LoadingSkeleton />;
@@ -337,11 +376,26 @@ export default function PatientQueuePage() {
                     {loading ? (
                       <Skeleton className="h-4 w-32 inline-block" />
                     ) : (
-                      `Total Services: ${services.length}`
+                      `Total: ${filteredServices.length} baris`
                     )}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as any)}
+                  >
+                    <SelectTrigger size="sm" className="min-w-44">
+                      <SelectValue placeholder="Filter status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value as string}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {!loading && (
                     <button
                       onClick={handleRefresh}
@@ -384,7 +438,7 @@ export default function PatientQueuePage() {
                 <EmptyState />
               ) : (
                 <ServiceQueueTable
-                  services={services}
+                  services={filteredServices as any}
                   onStatusUpdated={() => fetchServices(true)}
                 />
               )}
