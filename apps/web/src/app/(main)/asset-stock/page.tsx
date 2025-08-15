@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Package, HardDrive, Plus, Search, History } from "lucide-react";
-import { useAssets, useStocks, useAdjustment } from "@/hooks/use-asset-stock";
+import {
+  useAssetsInfinite,
+  useStocksInfinite,
+  useAdjustment,
+} from "@/hooks/use-asset-stock";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import {
   ItemTable,
   AdjustmentModal,
@@ -140,22 +145,50 @@ export default function AssetStockPage() {
   const {
     assets,
     totalValue: assetsTotal,
+    hasMore: assetsHasMore,
+    loadMore: assetsLoadMore,
     createAsset,
     deleteAsset,
     loading: assetsLoading,
+    isLoadingMore: assetsLoadingMore,
     error: assetsError,
     mutate: mutateAssets,
-  } = useAssets();
+  } = useAssetsInfinite(15);
 
   const {
     stocks,
     totalValue: stocksTotal,
+    hasMore: stocksHasMore,
+    loadMore: stocksLoadMore,
     createStock,
     deleteStock,
     loading: stocksLoading,
+    isLoadingMore: stocksLoadingMore,
     error: stocksError,
     mutate: mutateStocks,
-  } = useStocks();
+  } = useStocksInfinite(15);
+
+  // Setup infinite scroll for assets
+  const { loadMoreRef: assetsLoadMoreRef } = useInfiniteScroll(
+    assetsLoadMore,
+    assetsHasMore,
+    assetsLoading || assetsLoadingMore,
+    {
+      threshold: 200,
+      enabled: true,
+    }
+  );
+
+  // Setup infinite scroll for stocks
+  const { loadMoreRef: stocksLoadMoreRef } = useInfiniteScroll(
+    stocksLoadMore,
+    stocksHasMore,
+    stocksLoading || stocksLoadingMore,
+    {
+      threshold: 200,
+      enabled: true,
+    }
+  );
 
   const { adjustItem } = useAdjustment();
 
@@ -545,6 +578,21 @@ export default function AssetStockPage() {
                 canDelete={session?.role === "OWNER"}
                 onViewHistory={handleViewItemHistory}
               />
+
+              {/* Assets Infinite Scroll Loading Indicator */}
+              <div ref={assetsLoadMoreRef} className="flex justify-center py-4">
+                {assetsLoadingMore && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">Memuat lebih banyak aset...</span>
+                  </div>
+                )}
+                {!assetsHasMore && assets.length > 0 && (
+                  <div className="text-center text-muted-foreground text-sm">
+                    Semua aset telah dimuat
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Stock Section */}
@@ -597,6 +645,21 @@ export default function AssetStockPage() {
                 canDelete={session?.role === "OWNER"}
                 onViewHistory={handleViewItemHistory}
               />
+
+              {/* Stocks Infinite Scroll Loading Indicator */}
+              <div ref={stocksLoadMoreRef} className="flex justify-center py-4">
+                {stocksLoadingMore && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    <span className="text-sm">Memuat lebih banyak stok...</span>
+                  </div>
+                )}
+                {!stocksHasMore && stocks.length > 0 && (
+                  <div className="text-center text-muted-foreground text-sm">
+                    Semua stok telah dimuat
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

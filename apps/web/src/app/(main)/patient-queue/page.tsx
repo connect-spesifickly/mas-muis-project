@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -217,6 +218,9 @@ export default function PatientQueuePage() {
   const [error, setError] = useState<string | null>(null);
   const [tableLoading, setTableLoading] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const statusOptions = useMemo(
     () => [
       { value: "ALL", label: "Semua Status" },
@@ -228,8 +232,10 @@ export default function PatientQueuePage() {
   );
 
   const fetchServices = useCallback(
-    async (showTableLoading = false) => {
-      if (showTableLoading) {
+    async (showTableLoading = false, pageNum = 1, append = false) => {
+      if (append) {
+        setIsLoadingMore(true);
+      } else if (showTableLoading) {
         setTableLoading(true);
       } else {
         setLoading(true);
@@ -240,6 +246,7 @@ export default function PatientQueuePage() {
       if (!session?.accessToken) {
         setLoading(false);
         setTableLoading(false);
+        setIsLoadingMore(false);
         return;
       }
 
@@ -250,7 +257,7 @@ export default function PatientQueuePage() {
         );
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api"}/services`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api"}/services?page=${pageNum}&limit=15`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -269,28 +276,61 @@ export default function PatientQueuePage() {
         console.log("Services API response data:", data);
         console.log("Data Services:", data.data.data);
 
-        setServices(data.data.data || []);
+        const newServices = data.data.data || [];
+
+        if (append) {
+          setServices((prev) => [...prev, ...newServices]);
+        } else {
+          setServices(newServices);
+        }
+
+        // Check if there are more pages
+        setHasMore(newServices.length === 15);
         setError(null);
       } catch (error) {
         console.error("Services fetch error:", error);
         setError(
           error instanceof Error ? error.message : "Gagal memuat antrian pasien"
         );
-        setServices([]);
+        if (!append) {
+          setServices([]);
+        }
         toast.error("Gagal memuat antrian pasien.");
       } finally {
         setLoading(false);
         setTableLoading(false);
+        setIsLoadingMore(false);
       }
     },
     [session]
   );
 
+  const loadMore = useCallback(() => {
+    if (hasMore && !isLoadingMore && !loading) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchServices(false, nextPage, true);
+    }
+  }, [hasMore, isLoadingMore, loading, page, fetchServices]);
+
+  // Setup infinite scroll
+  const { loadMoreRef } = useInfiniteScroll(
+    loadMore,
+    hasMore,
+    loading || isLoadingMore,
+    {
+      threshold: 200,
+      enabled: true,
+    }
+  );
+
   const handleRetry = useCallback(() => {
+    setPage(1);
     fetchServices();
   }, [fetchServices]);
 
   const handleRefresh = useCallback(() => {
+    setPage(1);
     fetchServices(true);
   }, [fetchServices]);
 
@@ -448,10 +488,29 @@ export default function PatientQueuePage() {
               ) : services.length === 0 ? (
                 <EmptyState />
               ) : (
-                <ServiceQueueTable
-                  services={filteredServices}
-                  onStatusUpdated={() => fetchServices(true)}
-                />
+                <>
+                  <ServiceQueueTable
+                    services={filteredServices}
+                    onStatusUpdated={() => fetchServices(true)}
+                  />
+
+                  {/* Infinite Scroll Loading Indicator */}
+                  <div ref={loadMoreRef} className="flex justify-center py-4">
+                    {isLoadingMore && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm">
+                          Memuat lebih banyak antrian...
+                        </span>
+                      </div>
+                    )}
+                    {!hasMore && services.length > 0 && (
+                      <div className="text-center text-muted-foreground text-sm">
+                        Semua antrian telah dimuat
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

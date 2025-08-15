@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { useTransactions } from "@/hooks/use-transaction";
+import { useTransactionsInfinite } from "@/hooks/use-transaction";
 import { useCustomers } from "@/hooks/use-customer";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Transaction } from "@/types/transaction";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -268,19 +269,34 @@ export default function TransaksiKas() {
   });
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  // Fetch transactions
+  // Fetch transactions with infinite scroll
   const {
     transactions,
+    hasMore,
+    loadMore,
     isLoading,
+    isLoadingMore,
     error,
     createTransaction,
     updateTransaction,
     deleteTransaction,
-  } = useTransactions({
+  } = useTransactionsInfinite({
     month: filters.month,
     year: filters.year,
     userRole: session?.role,
+    limit: 15,
   });
+
+  // Setup infinite scroll
+  const { loadMoreRef } = useInfiniteScroll(
+    loadMore,
+    hasMore,
+    Boolean(isLoading || isLoadingMore),
+    {
+      threshold: 200,
+      enabled: true,
+    }
+  );
 
   // Get customers for dropdown
   const { customers: customerList } = useCustomers({
@@ -466,13 +482,30 @@ export default function TransaksiKas() {
                   loading={isLoading}
                   showRunningBalance={session?.role === "OWNER"}
                   onAdd={handleCreateTransaction}
-          onUpdate={handleUpdateTransaction}
-          onDelete={handleDeleteTransaction}
-          canDelete={canDelete}
+                  onUpdate={handleUpdateTransaction}
+                  onDelete={handleDeleteTransaction}
+                  canDelete={canDelete}
                 />
               )}
             </CardContent>
           </Card>
+
+          {/* Infinite Scroll Loading Indicator */}
+          <div ref={loadMoreRef} className="flex justify-center py-4">
+            {isLoadingMore && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm">
+                  Memuat lebih banyak transaksi...
+                </span>
+              </div>
+            )}
+            {!hasMore && transactions.length > 0 && (
+              <div className="text-center text-muted-foreground text-sm">
+                Semua transaksi telah dimuat
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

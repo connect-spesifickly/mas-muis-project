@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useSession } from "next-auth/react";
 import ExcelTable from "@/components/excel-table";
-import { useCustomers } from "@/hooks/use-customer";
+import { useCustomersInfinite } from "@/hooks/use-customer";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import {
   Customer,
   CreateCustomerData,
@@ -689,8 +690,7 @@ export default function DataCustomer() {
   const canDelete = session?.role === "OWNER";
   const [filters, setFilters] = useState({
     search: "",
-    page: 1,
-    limit: 20,
+    limit: 15,
   });
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -701,14 +701,27 @@ export default function DataCustomer() {
 
   const {
     customers,
-    pagination,
+    hasMore,
+    loadMore,
     isLoading,
+    isLoadingMore,
     error,
     createCustomer,
     updateCustomer,
     mergeCustomers,
     deleteCustomer,
-  } = useCustomers(filters);
+  } = useCustomersInfinite(filters);
+
+  // Setup infinite scroll
+  const { loadMoreRef } = useInfiniteScroll(
+    loadMore,
+    hasMore,
+    isLoading || isLoadingMore,
+    {
+      threshold: 200,
+      enabled: true,
+    }
+  );
 
   const handleCreateCustomer = async (data: Partial<Customer>) => {
     try {
@@ -879,9 +892,7 @@ export default function DataCustomer() {
     }
   };
 
-  const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
-  };
+  // Remove pagination handler since we're using infinite scroll
 
   const handleMergeCustomers = async (data: MergeCustomerData) => {
     try {
@@ -979,18 +990,20 @@ export default function DataCustomer() {
             </CardContent>
           </Card>
 
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <Card>
-              <CardContent className="pt-6">
-                <CustomerPagination
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Infinite Scroll Loading Indicator */}
+          <div ref={loadMoreRef} className="flex justify-center py-4">
+            {isLoadingMore && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm">Memuat lebih banyak data...</span>
+              </div>
+            )}
+            {!hasMore && customers.length > 0 && (
+              <div className="text-center text-muted-foreground text-sm">
+                Semua data customer telah dimuat
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

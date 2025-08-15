@@ -10,11 +10,17 @@ import { customerApi } from "@/lib/api/customer";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import * as React from "react";
 
 interface UseCustomerParams {
   search?: string;
   page: number;
+  limit: number;
+}
+
+interface UseCustomerInfiniteParams {
+  search?: string;
   limit: number;
 }
 
@@ -345,6 +351,308 @@ export function useCustomers(params: UseCustomerParams) {
     isLoading: loadingStates.initial,
     isFetching: loadingStates.fetching,
     isValidating: loadingStates.validating,
+    loadingStates,
+
+    // Error handling
+    error: enhancedError,
+
+    // Actions
+    createCustomer,
+    updateCustomer,
+    mergeCustomers,
+    downloadReport,
+    deleteCustomer,
+    refetch,
+
+    // Helpers
+    getCustomerById,
+    getCustomersByName,
+    mutate,
+    // Session info
+    isAuthenticated,
+    sessionStatus: status,
+  };
+}
+
+// Infinite scroll version of useCustomers
+export function useCustomersInfinite(params: UseCustomerInfiniteParams) {
+  const { data: session, status } = useSession();
+  const [actionLoading, setActionLoading] = React.useState({
+    creating: false,
+    updating: false,
+    merging: false,
+    deleting: false,
+    downloading: false,
+  });
+
+  const isAuthenticated = status === "authenticated";
+  const token = session?.accessToken;
+
+  // Key generator for infinite loading
+  const getKey = (pageIndex: number, previousPageData: any) => {
+    // If no token, don't fetch
+    if (!isAuthenticated || !token) return null;
+
+    // If reached the end, don't fetch
+    if (previousPageData && !previousPageData.data?.length) return null;
+
+    // First page, we don't have previousPageData
+    if (pageIndex === 0) {
+      return ["customers-infinite", { ...params, page: 1 }, token];
+    }
+
+    // Add the cursor to the API endpoint
+    return ["customers-infinite", { ...params, page: pageIndex + 1 }, token];
+  };
+
+  const fetcher = async ([, keyParams, tkn]: [
+    string,
+    UseCustomerParams,
+    string,
+  ]) => {
+    return fetchCustomersApi(keyParams, tkn);
+  };
+
+  const { data, error, isLoading, isValidating, mutate, size, setSize } =
+    useSWRInfinite(getKey, fetcher, {
+      revalidateOnFocus: false,
+      revalidateFirstPage: false,
+      errorRetryCount: 3,
+      errorRetryInterval: 1000,
+      onError: (error) => {
+        const errorInfo = extractErrorMessage(error);
+        console.error("SWR Infinite Error in useCustomers:", errorInfo);
+
+        // Don't show toast for authentication errors
+        if (errorInfo.status !== 401 && errorInfo.status !== 403) {
+          toast.error(`Gagal memuat customer: ${errorInfo.message}`);
+        }
+      },
+    });
+
+  // Flatten all customers from all pages
+  const customers = React.useMemo(() => {
+    if (!data) return [];
+    return data.flatMap((page) => page.data || []);
+  }, [data]);
+
+  // Check if we can load more
+  const hasMore = React.useMemo(() => {
+    if (!data || data.length === 0) return true;
+    const lastPage = data[data.length - 1];
+    return lastPage && lastPage.currentPage < lastPage.totalPages;
+  }, [data]);
+
+  // Load more function
+  const loadMore = React.useCallback(() => {
+    if (hasMore && !isLoading && !isValidating) {
+      setSize(size + 1);
+    }
+  }, [hasMore, isLoading, isValidating, setSize, size]);
+
+  // Enhanced error information
+  const enhancedError = React.useMemo(() => {
+    if (!error) return null;
+    return extractErrorMessage(error);
+  }, [error]);
+
+  // Loading states
+  const loadingStates = React.useMemo(
+    () => ({
+      initial: status === "loading" || (isLoading && !data),
+      fetching: isLoading,
+      validating: isValidating,
+      creating: actionLoading.creating,
+      updating: actionLoading.updating,
+      merging: actionLoading.merging,
+      deleting: actionLoading.deleting,
+      downloading: actionLoading.downloading,
+      anyAction: Object.values(actionLoading).some(Boolean),
+      loadingMore: isValidating && data && data.length > 0,
+    }),
+    [status, isLoading, data, isValidating, actionLoading]
+  );
+
+  // Pagination info for compatibility
+  const pagination = React.useMemo(() => {
+    const lastPage = data?.[data.length - 1];
+    return {
+      totalPages: lastPage?.totalPages || 0,
+      currentPage: size,
+      hasNextPage: hasMore,
+      hasPrevPage: size > 1,
+    };
+  }, [data, size, hasMore]);
+
+  const createCustomer = async (dataInput: CreateCustomerData) => {
+    if (!token) {
+      toast.error("Token tidak tersedia");
+      throw new Error("Authentication token not available");
+    }
+
+    setActionLoading((prev) => ({ ...prev, creating: true }));
+
+    try {
+      console.log("Creating customer:", dataInput);
+      const newCustomer = await customerApi.create(dataInput, token);
+      toast.success("Customer berhasil dibuat");
+
+      // Revalidate the customers list
+      await mutate();
+
+      return newCustomer;
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to create customer:", errorInfo);
+      toast.error(`Gagal membuat customer: ${errorInfo.message}`);
+      throw error;
+    } finally {
+      setActionLoading((prev) => ({ ...prev, creating: false }));
+    }
+  };
+
+  const updateCustomer = async (id: string, dataInput: UpdateCustomerData) => {
+    if (!token) {
+      toast.error("Token tidak tersedia");
+      throw new Error("Authentication token not available");
+    }
+
+    setActionLoading((prev) => ({ ...prev, updating: true }));
+
+    try {
+      console.log("Updating customer:", id, dataInput);
+      const updatedCustomer = await customerApi.update(id, dataInput, token);
+      toast.success("Customer berhasil diperbarui");
+
+      // Revalidate the customers list
+      await mutate();
+
+      return updatedCustomer;
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to update customer:", errorInfo);
+      toast.error(`Gagal memperbarui customer: ${errorInfo.message}`);
+      throw error;
+    } finally {
+      setActionLoading((prev) => ({ ...prev, updating: false }));
+    }
+  };
+
+  const mergeCustomers = async (dataInput: MergeCustomerData) => {
+    if (!token) {
+      toast.error("Token tidak tersedia");
+      throw new Error("Authentication token not available");
+    }
+
+    setActionLoading((prev) => ({ ...prev, merging: true }));
+
+    try {
+      console.log("Merging customers:", dataInput);
+      await customerApi.merge(dataInput, token);
+      toast.success("Customer berhasil digabungkan");
+
+      // Revalidate the customers list
+      await mutate();
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to merge customers:", errorInfo);
+      toast.error(`Gagal menggabungkan customer: ${errorInfo.message}`);
+      throw error;
+    } finally {
+      setActionLoading((prev) => ({ ...prev, merging: false }));
+    }
+  };
+
+  const downloadReport = async (customerId: string) => {
+    if (!token) {
+      toast.error("Token tidak tersedia");
+      throw new Error("Authentication token not available");
+    }
+
+    setActionLoading((prev) => ({ ...prev, downloading: true }));
+
+    try {
+      console.log("Downloading report for customer:", customerId);
+      const reportData = await customerApi.downloadReport(customerId, token);
+      toast.success("Laporan berhasil diunduh");
+      return reportData;
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to download report:", errorInfo);
+      toast.error(`Gagal mengunduh laporan: ${errorInfo.message}`);
+      throw error;
+    } finally {
+      setActionLoading((prev) => ({ ...prev, downloading: false }));
+    }
+  };
+
+  const deleteCustomer = async (id: string) => {
+    if (!token) {
+      toast.error("Token tidak tersedia");
+      throw new Error("Authentication token not available");
+    }
+
+    setActionLoading((prev) => ({ ...prev, deleting: true }));
+
+    try {
+      await customerApi.delete(id, token);
+      toast.success("Customer berhasil dihapus");
+      await mutate();
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to delete customer:", errorInfo);
+      toast.error(
+        `Gagal menghapus customer: ${errorInfo.message}, mungkin data cutomer tertaut ke data lainnya`
+      );
+      throw error;
+    } finally {
+      setActionLoading((prev) => ({ ...prev, deleting: false }));
+    }
+  };
+
+  const refetch = React.useCallback(async () => {
+    try {
+      await mutate();
+    } catch (error) {
+      const errorInfo = extractErrorMessage(error);
+      console.error("Failed to refetch customers:", errorInfo);
+      toast.error(`Gagal memuat ulang data: ${errorInfo.message}`);
+    }
+  }, [mutate]);
+
+  // Helper functions
+  const getCustomerById = React.useCallback(
+    (id: string) => {
+      return customers.find((customer) => customer.id === id);
+    },
+    [customers]
+  );
+
+  const getCustomersByName = React.useCallback(
+    (name: string) => {
+      return customers.filter((customer) =>
+        customer.name.toLowerCase().includes(name.toLowerCase())
+      );
+    },
+    [customers]
+  );
+
+  return {
+    // Data
+    customers,
+    pagination,
+
+    // Infinite scroll specific
+    hasMore,
+    loadMore,
+    size,
+    setSize,
+
+    // Loading states
+    isLoading: loadingStates.initial,
+    isFetching: loadingStates.fetching,
+    isValidating: loadingStates.validating,
+    isLoadingMore: loadingStates.loadingMore,
     loadingStates,
 
     // Error handling
