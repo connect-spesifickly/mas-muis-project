@@ -18,6 +18,24 @@ import {
 } from "@/components/ui/select";
 import { ServiceStatus } from "@/types/service";
 
+// Local types for services to avoid using `any`
+interface Device {
+  id: number;
+  deviceType: string;
+  problemDescription: string;
+  accessoriesLeft?: string | null;
+  status: ServiceStatus;
+}
+
+interface Service {
+  id: number;
+  createdAt: string | Date;
+  customer: { id: string; name: string; phone: string };
+  devices: Device[];
+}
+
+type StatusFilter = "ALL" | ServiceStatus;
+
 // Skeleton Components
 const SkeletonTableRow = () => (
   <tr className="border-b">
@@ -194,13 +212,11 @@ const EmptyState = () => (
 
 export default function PatientQueuePage() {
   const { data: session, status } = useSession();
-  const [services, setServices] = useState<[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [tableLoading, setTableLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | ServiceStatus>(
-    "ALL"
-  );
+  const [tableLoading, setTableLoading] = useState<boolean>(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const statusOptions = useMemo(
     () => [
       { value: "ALL", label: "Semua Status" },
@@ -287,17 +303,15 @@ export default function PatientQueuePage() {
     }
   }, [fetchServices, status]);
 
-  const filteredServices = useMemo(() => {
+  const filteredServices = useMemo<Service[]>(() => {
     if (statusFilter === "ALL") return services;
     // Keep only devices matching the selected status; drop services with no matching devices
-    return (services as any[])
-      .map((s: any) => ({
+    return services
+      .map((s) => ({
         ...s,
-        devices: (s.devices || []).filter(
-          (d: any) => d.status === statusFilter
-        ),
+        devices: (s.devices || []).filter((d) => d.status === statusFilter),
       }))
-      .filter((s: any) => (s.devices || []).length > 0);
+      .filter((s) => (s.devices || []).length > 0);
   }, [services, statusFilter]);
 
   // Show loading skeleton during initial load
@@ -378,14 +392,17 @@ export default function PatientQueuePage() {
                 <div className="flex items-center gap-2">
                   <Select
                     value={statusFilter}
-                    onValueChange={(v) => setStatusFilter(v as any)}
+                    onValueChange={(v) => setStatusFilter(v as StatusFilter)}
                   >
                     <SelectTrigger size="sm" className="min-w-44">
                       <SelectValue placeholder="Filter status" />
                     </SelectTrigger>
                     <SelectContent>
                       {statusOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value as string}>
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value as StatusFilter}
+                        >
                           {opt.label}
                         </SelectItem>
                       ))}
@@ -433,7 +450,7 @@ export default function PatientQueuePage() {
                 <EmptyState />
               ) : (
                 <ServiceQueueTable
-                  services={filteredServices as any}
+                  services={filteredServices}
                   onStatusUpdated={() => fetchServices(true)}
                 />
               )}
