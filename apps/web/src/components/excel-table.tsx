@@ -174,29 +174,63 @@ export default function ExcelTable<
     if (sortConfig) {
       // Manual sorting by user clicking column headers
       console.log("Manual sorting by:", sortConfig.key, sortConfig.direction);
+
+      const columnMeta = columns.find((c) => c.key === sortConfig.key);
+      const dir = sortConfig.direction === "asc" ? 1 : -1;
+
+      // Helper to coerce different value types to numbers (supports string, number, Prisma Decimal)
+      const toNumber = (v: unknown): number => {
+        if (typeof v === "number") return v;
+        if (typeof v === "string") {
+          // Remove formatting like currency symbols and thousand separators
+          const n = parseFloat(v.replace(/[^0-9.-]/g, ""));
+          return isNaN(n) ? NaN : n;
+        }
+        if (v && typeof v === "object") {
+          // Prisma Decimal support
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const anyV: any = v;
+          if (typeof anyV.toNumber === "function") {
+            const n = anyV.toNumber();
+            return typeof n === "number" ? n : NaN;
+          }
+          if (v instanceof Date) return v.getTime();
+        }
+        return NaN;
+      };
+
       filtered.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
 
-        // Handle different data types
-        if (aValue instanceof Date && bValue instanceof Date) {
-          return sortConfig.direction === "asc"
-            ? aValue.getTime() - bValue.getTime()
-            : bValue.getTime() - aValue.getTime();
+        // Number columns: compare numerically even if values are strings/Decimals
+        if (columnMeta?.type === "number") {
+          const aNum = toNumber(aValue);
+          const bNum = toNumber(bValue);
+          if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+            return (aNum - bNum) * dir;
+          }
         }
 
-        if (typeof aValue === "number" && typeof bValue === "number") {
-          return sortConfig.direction === "asc"
-            ? aValue - bValue
-            : bValue - aValue;
+        // Date columns: compare by time
+        if (columnMeta?.type === "date") {
+          const aTime = aValue ? new Date(String(aValue)).getTime() : 0;
+          const bTime = bValue ? new Date(String(bValue)).getTime() : 0;
+          return (aTime - bTime) * dir;
         }
 
-        // Convert to string for comparison
-        const aString = String(aValue || "");
-        const bString = String(bValue || "");
+        // Fallback: if both look numeric, compare numerically
+        const aNumFallback = toNumber(aValue);
+        const bNumFallback = toNumber(bValue);
+        if (!Number.isNaN(aNumFallback) && !Number.isNaN(bNumFallback)) {
+          return (aNumFallback - bNumFallback) * dir;
+        }
 
-        if (aString < bString) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aString > bString) return sortConfig.direction === "asc" ? 1 : -1;
+        // String compare (case-insensitive)
+        const aString = String(aValue ?? "").toLowerCase();
+        const bString = String(bValue ?? "").toLowerCase();
+        if (aString < bString) return -1 * dir;
+        if (aString > bString) return 1 * dir;
         return 0;
       });
     } else if (showRunningBalance) {
