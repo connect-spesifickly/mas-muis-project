@@ -65,8 +65,10 @@ class ReportService {
    */
   async monthlySummary(month: number, year: number) {
     try {
-      const start = new Date(year, month - 1, 1);
-      const end = new Date(year, month, 1);
+      // Use Singapore time (UTC+8) month boundaries to avoid timezone drift on Vercel
+      const tzOffsetHours = 8;
+      const start = new Date(Date.UTC(year, month - 1, 1, -tzOffsetHours));
+      const end = new Date(Date.UTC(year, month, 1, -tzOffsetHours));
 
       const [incomeResult, expenseResult, hppTransactions] = await Promise.all([
         safePrismaOperation(() =>
@@ -129,8 +131,10 @@ class ReportService {
    */
   async cashPosition(month: number, year: number) {
     try {
-      const awalBulan = new Date(year, month - 1, 1);
-      const akhirBulan = new Date(year, month, 1);
+      // Singapore time (UTC+8) boundaries
+      const tzOffsetHours = 8;
+      const awalBulan = new Date(Date.UTC(year, month - 1, 1, -tzOffsetHours));
+      const akhirBulan = new Date(Date.UTC(year, month, 1, -tzOffsetHours));
 
       const [incomeBefore, expenseBefore, incomeInMonth, expenseInMonth] =
         await Promise.all([
@@ -191,7 +195,11 @@ class ReportService {
    */
   async companyValuation(year: number) {
     try {
-      const end = new Date(year, 11, 31, 23, 59, 59, 999);
+      // End of year in Singapore time (UTC+8)
+      const tzOffsetHours = 8;
+      const end = new Date(
+        Date.UTC(year, 11, 31, 16 - tzOffsetHours, 59, 59, 999)
+      );
 
       const [income, expense, asetItems, stokItems] = await Promise.all([
         // Hitung total kas di database
@@ -309,8 +317,9 @@ class ReportService {
               .aggregate({
                 where: {
                   transactionDate: {
-                    gte: new Date(year, month - 1, 1),
-                    lt: new Date(year, month, 1),
+                    // Singapore time (UTC+8) month boundaries
+                    gte: new Date(Date.UTC(year, month - 1, 1, -8)),
+                    lt: new Date(Date.UTC(year, month, 1, -8)),
                   },
                   type: "INCOME",
                 },

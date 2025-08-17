@@ -19,8 +19,10 @@ class TransactionService {
 
     // 1. Tentukan rentang tanggal dan tanggal mulai (startDate)
     if (month && year) {
-      startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 1); // exclusive upper bound (start of next month)
+      // Use Singapore time (UTC+8) boundaries, independent of server timezone
+      const tzOffsetHours = 8; // Asia/Singapore is UTC+8 all year
+      startDate = new Date(Date.UTC(year, month - 1, 1, -tzOffsetHours));
+      const endDate = new Date(Date.UTC(year, month, 1, -tzOffsetHours)); // exclusive upper bound
       where.transactionDate = { gte: startDate, lt: endDate };
     }
 
