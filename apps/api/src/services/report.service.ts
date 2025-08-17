@@ -66,13 +66,13 @@ class ReportService {
   async monthlySummary(month: number, year: number) {
     try {
       const start = new Date(year, month - 1, 1);
-      const end = new Date(year, month, 0, 23, 59, 59, 999);
+      const end = new Date(year, month, 1);
 
       const [incomeResult, expenseResult, hppTransactions] = await Promise.all([
         safePrismaOperation(() =>
           prisma.transaction.aggregate({
             where: {
-              transactionDate: { gte: start, lte: end },
+              transactionDate: { gte: start, lt: end },
               type: TransactionType.INCOME,
             },
             _sum: { amount: true },
@@ -81,7 +81,7 @@ class ReportService {
         safePrismaOperation(() =>
           prisma.transaction.aggregate({
             where: {
-              transactionDate: { gte: start, lte: end },
+              transactionDate: { gte: start, lt: end },
               type: TransactionType.EXPENSE,
             },
             _sum: { amount: true },
@@ -91,7 +91,7 @@ class ReportService {
         safePrismaOperation(() =>
           prisma.transaction.findMany({
             where: {
-              transactionDate: { gte: start, lte: end },
+              transactionDate: { gte: start, lt: end },
               type: TransactionType.INCOME, // HPP hanya dari penjualan (pemasukan)
               itemId: { not: null },
             },
@@ -130,7 +130,7 @@ class ReportService {
   async cashPosition(month: number, year: number) {
     try {
       const awalBulan = new Date(year, month - 1, 1);
-      const akhirBulan = new Date(year, month, 0, 23, 59, 59, 999);
+      const akhirBulan = new Date(year, month, 1);
 
       const [incomeBefore, expenseBefore, incomeInMonth, expenseInMonth] =
         await Promise.all([
@@ -157,7 +157,7 @@ class ReportService {
           safePrismaOperation(() =>
             prisma.transaction.aggregate({
               where: {
-                transactionDate: { gte: awalBulan, lte: akhirBulan },
+                transactionDate: { gte: awalBulan, lt: akhirBulan },
                 type: TransactionType.INCOME,
               },
               _sum: { amount: true },
@@ -166,7 +166,7 @@ class ReportService {
           safePrismaOperation(() =>
             prisma.transaction.aggregate({
               where: {
-                transactionDate: { gte: awalBulan, lte: akhirBulan },
+                transactionDate: { gte: awalBulan, lt: akhirBulan },
                 type: TransactionType.EXPENSE,
               },
               _sum: { amount: true },
