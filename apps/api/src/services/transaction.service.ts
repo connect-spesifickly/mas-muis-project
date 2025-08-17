@@ -20,8 +20,8 @@ class TransactionService {
     // 1. Tentukan rentang tanggal dan tanggal mulai (startDate)
     if (month && year) {
       startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-      where.transactionDate = { gte: startDate, lte: endDate };
+      const endDate = new Date(year, month, 1); // exclusive upper bound (start of next month)
+      where.transactionDate = { gte: startDate, lt: endDate };
     }
 
     // 2. Ambil transaksi untuk periode yang dipilih

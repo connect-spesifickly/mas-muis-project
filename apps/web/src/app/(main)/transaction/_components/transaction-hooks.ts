@@ -71,7 +71,7 @@ export const handleCreateTransaction = async (
       // ExcelTable returns string for date input, convert to Date
       if (typeof transactionData.transactionDate === "string") {
         transactionData.transactionDate = new Date(
-          transactionData.transactionDate + "T00:00:00"
+          transactionData.transactionDate + "T12:00:00"
         );
       }
     } else {
@@ -153,7 +153,7 @@ export const handleUpdateTransaction = async (
       // ExcelTable returns string for date input, convert to Date
       if (typeof transactionData.transactionDate === "string") {
         transactionData.transactionDate = new Date(
-          transactionData.transactionDate + "T00:00:00"
+          transactionData.transactionDate + "T12:00:00"
         );
       }
     }

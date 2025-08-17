@@ -297,6 +297,7 @@ class ReportService {
    * Menyediakan data omset per bulan untuk grafik.
    * Efisiensi: Sangat Tinggi. Menggunakan agregasi di database.
    */
+
   async getMonthlyOmsetPerYear(year: number) {
     try {
       // Loop 12x aggregate, efisien dan mudah dibaca
