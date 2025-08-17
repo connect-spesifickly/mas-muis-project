@@ -255,6 +255,7 @@ class ReportService {
    * Menyediakan data valuasi per tahun untuk grafik.
    * Efisiensi: Sedang ke Tinggi. Loop di server, tapi kalkulasi per tahun efisien.
    */
+
   async yearlyGraphData() {
     try {
       // Pendekatan ini lebih efisien daripada mengambil semua transaksi
