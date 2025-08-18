@@ -1,6 +1,7 @@
 import prisma from "../prisma";
 import { TransactionType, ItemType, Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import { sgMonthRange, sgYearRange } from "../utils/time";
 
 // Helper function untuk kejelasan dan menghindari pengulangan kode
 const calculateBalance = (
@@ -65,10 +66,7 @@ class ReportService {
    */
   async monthlySummary(month: number, year: number) {
     try {
-      // Use Singapore time (UTC+8) month boundaries to avoid timezone drift on Vercel
-      const tzOffsetHours = 8;
-      const start = new Date(Date.UTC(year, month - 1, 1, -tzOffsetHours));
-      const end = new Date(Date.UTC(year, month, 1, -tzOffsetHours));
+      const { start, endExclusive: end } = sgMonthRange(year, month);
 
       const [incomeResult, expenseResult, hppTransactions] = await Promise.all([
         safePrismaOperation(() =>
@@ -131,10 +129,10 @@ class ReportService {
    */
   async cashPosition(month: number, year: number) {
     try {
-      // Singapore time (UTC+8) boundaries
-      const tzOffsetHours = 8;
-      const awalBulan = new Date(Date.UTC(year, month - 1, 1, -tzOffsetHours));
-      const akhirBulan = new Date(Date.UTC(year, month, 1, -tzOffsetHours));
+      const { start: awalBulan, endExclusive: akhirBulan } = sgMonthRange(
+        year,
+        month
+      );
 
       const [incomeBefore, expenseBefore, incomeInMonth, expenseInMonth] =
         await Promise.all([
@@ -195,11 +193,7 @@ class ReportService {
    */
   async companyValuation(year: number) {
     try {
-      // End of year in Singapore time (UTC+8)
-      const tzOffsetHours = 8;
-      const end = new Date(
-        Date.UTC(year, 11, 31, 16 - tzOffsetHours, 59, 59, 999)
-      );
+      const { endExclusive: end } = sgYearRange(year);
 
       const [income, expense, asetItems, stokItems] = await Promise.all([
         // Hitung total kas di database
@@ -300,12 +294,10 @@ class ReportService {
       throw error;
     }
   }
-
   /**
    * Menyediakan data omset per bulan untuk grafik.
    * Efisiensi: Sangat Tinggi. Menggunakan agregasi di database.
    */
-
   async getMonthlyOmsetPerYear(year: number) {
     try {
       // Loop 12x aggregate, efisien dan mudah dibaca
@@ -317,9 +309,9 @@ class ReportService {
               .aggregate({
                 where: {
                   transactionDate: {
-                    // Singapore time (UTC+8) month boundaries
-                    gte: new Date(Date.UTC(year, month - 1, 1, -8)),
-                    lt: new Date(Date.UTC(year, month, 1, -8)),
+                    // Singapore time (UTC+8) month boundaries (via helper)
+                    gte: sgMonthRange(year, month).start,
+                    lt: sgMonthRange(year, month).endExclusive,
                   },
                   type: "INCOME",
                 },

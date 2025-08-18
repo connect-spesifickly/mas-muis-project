@@ -1,6 +1,7 @@
 import prisma from "../prisma";
 import { ResponseError } from "../helpers/error";
 import { TransactionType, Role } from "@prisma/client";
+import { sgMonthRange } from "../utils/time";
 
 class TransactionService {
   async list({
@@ -19,11 +20,9 @@ class TransactionService {
 
     // 1. Tentukan rentang tanggal dan tanggal mulai (startDate)
     if (month && year) {
-      // Use Singapore time (UTC+8) boundaries, independent of server timezone
-      const tzOffsetHours = 8; // Asia/Singapore is UTC+8 all year
-      startDate = new Date(Date.UTC(year, month - 1, 1, -tzOffsetHours));
-      const endDate = new Date(Date.UTC(year, month, 1, -tzOffsetHours)); // exclusive upper bound
-      where.transactionDate = { gte: startDate, lt: endDate };
+      const { start, endExclusive } = sgMonthRange(year, month);
+      startDate = start;
+      where.transactionDate = { gte: start, lt: endExclusive };
     }
 
     // 2. Ambil transaksi untuk periode yang dipilih
