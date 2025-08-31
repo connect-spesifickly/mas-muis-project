@@ -7,6 +7,7 @@ import { itemRouter } from "./item.router";
 import { transactionRouter } from "./transaction.router";
 import { reportRouter } from "./report.router";
 import { assetStockRouter } from "./asset-stock.router";
+import { cronRouter } from "./cron.router";
 
 const apiRouter = Router();
 
@@ -18,5 +19,6 @@ apiRouter.use("/items", itemRouter());
 apiRouter.use("/transactions", transactionRouter());
 apiRouter.use("/reports", reportRouter());
 apiRouter.use("/asset-stock", assetStockRouter());
+apiRouter.use("/cron", cronRouter());
 
 export default apiRouter;

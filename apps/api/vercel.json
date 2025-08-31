@@ -14,5 +14,11 @@
       "src": "/(.*)",
       "dest": "src/index.ts"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/ping-db",
+      "schedule": "0 */12 * * *"
+    }
   ]
 }
