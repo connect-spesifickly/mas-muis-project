@@ -147,6 +147,7 @@ export default class App {
       }
     );
   }
+
   public getServer(): Express {
     return this.app;
   }
