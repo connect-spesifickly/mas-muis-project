@@ -17,7 +17,7 @@ const rolePermissions: Record<string, PageType[]> = {
     "asset-stock",
     "user",
   ],
-  ACCOUNTANT: ["transaction", "asset-stock"],
+  ACCOUNTANT: ["transaction", "asset-stock", "customer"],
   TECHNICIAN: ["patient-queue", "customer"],
 };
 

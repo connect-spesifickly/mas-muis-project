@@ -871,7 +871,9 @@ export default function DataCustomer() {
   // Header actions for ExcelTable
   const headerActions = (
     <div className="flex items-center gap-2">
-      {(user?.role === "OWNER" || user?.role === "TECHNICIAN") && (
+      {(user?.role === "OWNER" ||
+        user?.role === "TECHNICIAN" ||
+        user?.role === "ACCOUNTANT") && (
         <Button
           variant="outline"
           size="sm"
